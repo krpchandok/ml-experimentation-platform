@@ -34,7 +34,7 @@ def submit_job(config_path, producer=None, job_store=None):
     return submit_job_from_config(
             config,
             producer=producer,
-            store=store,
+            store=job_store,
         )
 
 def submit_job_from_config(config, producer=None, store=None):

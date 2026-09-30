@@ -10,6 +10,7 @@ from src.experiment import ExperimentRunner, config_from_dict
 from src.experiment_tracker import MLflowTracker
 from src.result_store import PostgresResultStore
 from src.job_store import PostgresJobStore
+from src.datasets.registry import DatabricksDatasetRegistry
 from src.messaging.producer import TRAINING_JOBS_TOPIC
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -27,6 +28,7 @@ class JobConsumer:
         self.consumer.subscribe([topic])
         self.tracker = MLflowTracker(os.environ["MLFLOW_TRACKING_URI"], os.environ["MLFLOW_EXPERIMENT_NAME"])
         self.job_store = PostgresJobStore()
+        self.dataset_registry = DatabricksDatasetRegistry()
 
     def run(self):
         print("Waiting for training jobs...")
@@ -67,7 +69,8 @@ class JobConsumer:
             result = ExperimentRunner(
                 job.experiment_id,
                 config,
-                self.tracker
+                self.tracker,
+                self.dataset_registry
             ).run()
 
             PostgresResultStore(result).save()

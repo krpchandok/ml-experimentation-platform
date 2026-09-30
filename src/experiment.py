@@ -1,11 +1,11 @@
 from dataclasses import dataclass, asdict
-from src.model import Models, Datasets, MODEL_BUILDERS
+from src.model import Models, MODEL_BUILDERS
 from src.trainer import SklearnTrainer
+from src.etl.spec import load_spec
 from pathlib import Path
 import json
 import yaml
 from time import perf_counter
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -13,15 +13,19 @@ from sklearn.preprocessing import StandardScaler
 @dataclass
 class ExperimentConfig:
     model: Models
-    dataset: Datasets
+    dataset: str
     hyperparameters: dict ## C, iterations, random_seed
+    dataset_version: int = None
+    content_hash: str = None
 
 
 def config_from_dict(data):
     return ExperimentConfig(
         model=Models(data["model"]),
-        dataset=Datasets(data["dataset"]),
+        dataset=data["dataset"],
         hyperparameters=data["hyperparameters"],
+        dataset_version=data.get("dataset_version"),
+        content_hash=data.get("content_hash"),
     )
 
 
@@ -33,16 +37,24 @@ def load_config(path):
 
 
 class ExperimentRunner:
-    def __init__(self, experiment_id, config, tracker):
+    def __init__(self, experiment_id, config, tracker, dataset_registry):
         self.experiment_id = experiment_id
         self.config = config
         self.tracker = tracker
+        self.dataset_registry = dataset_registry
 
     def run(self):
         start = perf_counter()
 
+        self.resolve_dataset()
+
         with self.tracker.start_run(run_name=self.experiment_id):
-            self.tracker.set_tags({"model": self.config.model.value, "dataset": self.config.dataset.value})
+            self.tracker.set_tags({
+                "model": self.config.model.value,
+                "dataset": self.config.dataset,
+                "dataset_version": str(self.config.dataset_version),
+                "content_hash": self.config.content_hash or "",
+            })
             self.tracker.log_params(self.config.hyperparameters)
 
             self.load_dataset()
@@ -59,22 +71,34 @@ class ExperimentRunner:
         return ExperimentResult(
             experiment_id=self.experiment_id,
             model=self.config.model.value,
-            dataset=self.config.dataset.value,
+            dataset=self.config.dataset,
+            dataset_version=self.config.dataset_version,
             metrics=metrics,
             runtime=runtime,
         )
 
+    def resolve_dataset(self):
+        if self.config.dataset_version is not None:
+            return
+
+        manifest = self.dataset_registry.latest(self.config.dataset)
+        if manifest is None:
+            raise ValueError(f"No versions found for dataset: {self.config.dataset}")
+
+        self.config.dataset_version = manifest["delta_version"]
+        self.config.content_hash = manifest["content_hash"]
+
     def load_dataset(self):
-        if self.config.dataset == Datasets.IRIS:
-            self.data = load_iris()
-        else:
-            raise ValueError(f"Unsupported dataset: {self.config.dataset}")
+        df = self.dataset_registry.load(self.config.dataset, self.config.dataset_version)
+        spec = load_spec(f"configs/datasets/{self.config.dataset}.yaml")
+
+        self.X_raw = df.drop(columns=[spec.label_column]).to_numpy()
+        self.y_raw = df[spec.label_column].to_numpy()
 
     def split_data(self):
-        X, y = self.data.data, self.data.target
         X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
+            self.X_raw,
+            self.y_raw,
             test_size=self.config.hyperparameters.get("split", 0.2),
             random_state=self.config.hyperparameters.get("random_seed", 42),
         )
@@ -104,6 +128,7 @@ class ExperimentResult:
     experiment_id: str
     model: str
     dataset: str
+    dataset_version: int
     metrics: dict
     runtime: float
 

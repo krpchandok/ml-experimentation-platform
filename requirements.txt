@@ -8,7 +8,13 @@ confluent-kafka
 mlflow
 python-dotenv
 PyYAML
-psycopg2-binary
+psycopg[binary]
 
 fastapi
 uvicorn[standard]
+
+pyspark
+databricks-sdk
+databricks-sql-connector
+pyarrow
+pytest

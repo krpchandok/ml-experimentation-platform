@@ -39,20 +39,25 @@ class PostgresResultStore(ResultStore):
                     created_at TIMESTAMPTZ DEFAULT now()
                 )
             """)
+            cur.execute("""
+                ALTER TABLE experiment_results
+                ADD COLUMN IF NOT EXISTS dataset_version INTEGER
+            """)
         self.conn.commit()
 
     def save(self):
         with self.conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO experiment_results (experiment_id, model, dataset, metrics, runtime)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO experiment_results (experiment_id, model, dataset, dataset_version, metrics, runtime)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (experiment_id) DO NOTHING
                 """,
                 (
                     self.result.experiment_id,
                     self.result.model,
                     self.result.dataset,
+                    self.result.dataset_version,
                     json.dumps(self.result.metrics),
                     self.result.runtime,
                 ),

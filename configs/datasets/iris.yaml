@@ -1,0 +1,33 @@
+name: iris
+raw_path: /Volumes/workspace/ml_platform/raw/iris.csv
+format: csv
+columns:
+  - name: sepal_length
+    type: double
+    required: true
+    min: 0
+    max: 20
+  - name: sepal_width
+    type: double
+    required: true
+    min: 0
+    max: 20
+  - name: petal_length
+    type: double
+    required: true
+    min: 0
+    max: 20
+  - name: petal_width
+    type: double
+    required: true
+    min: 0
+    max: 20
+  - name: species
+    type: string
+    required: true
+label_column: species
+allowed_labels:
+  - setosa
+  - versicolor
+  - virginica
+max_rejection_rate: 0.2
