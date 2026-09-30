@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 from model import Models, Datasets, MODEL_BUILDERS
 from trainer import SklearnTrainer
+from experiment_tracker import MLflowTracker
 from pathlib import Path
 import json
 import uuid
@@ -30,21 +31,29 @@ def load_config(path):
 
 
 class ExperimentRunner:
-    def __init__(self, config):
+    def __init__(self, config, tracker=None):
         self.config = config
+        self.tracker = tracker or MLflowTracker()
 
     def run(self):
         experiment_id = str(uuid.uuid4())
 
         start = perf_counter()
 
-        self.load_dataset()
-        self.split_data()
-        self.create_model()
-        self.train()
-        metrics = self.evaluate()
+        with self.tracker.start_run(run_name=experiment_id):
+            self.tracker.set_tags({"model": self.config.model.value, "dataset": self.config.dataset.value})
+            self.tracker.log_params(self.config.hyperparameters)
 
-        runtime = perf_counter() - start
+            self.load_dataset()
+            self.split_data()
+            self.create_model()
+            self.train()
+            metrics = self.evaluate()
+
+            runtime = perf_counter() - start
+
+            self.tracker.log_metrics({**metrics, "runtime": runtime})
+            self.tracker.log_model(self.model, name="model")
 
         return ExperimentResult(
             experiment_id=experiment_id,
