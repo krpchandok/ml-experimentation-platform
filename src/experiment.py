@@ -1,7 +1,6 @@
 from dataclasses import dataclass, asdict
 from model import Models, Datasets, MODEL_BUILDERS
 from trainer import SklearnTrainer
-from experiment_tracker import MLflowTracker
 from pathlib import Path
 import json
 import uuid
@@ -19,10 +18,7 @@ class ExperimentConfig:
     hyperparameters: dict ## C, iterations, random_seed
 
 
-def load_config(path):
-    with open(path) as f:
-        data = yaml.safe_load(f)
-
+def config_from_dict(data):
     return ExperimentConfig(
         model=Models(data["model"]),
         dataset=Datasets(data["dataset"]),
@@ -30,10 +26,17 @@ def load_config(path):
     )
 
 
+def load_config(path):
+    with open(path) as f:
+        data = yaml.safe_load(f)
+
+    return config_from_dict(data)
+
+
 class ExperimentRunner:
-    def __init__(self, config, tracker=None):
+    def __init__(self, config, tracker):
         self.config = config
-        self.tracker = tracker or MLflowTracker()
+        self.tracker = tracker
 
     def run(self):
         experiment_id = str(uuid.uuid4())

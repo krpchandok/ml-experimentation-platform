@@ -1,4 +1,6 @@
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 import sys
 from experiment import ExperimentRunner, load_config, save_result
 from experiment_tracker import MLflowTracker
@@ -10,9 +12,11 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT_DIR / "configs"
 RESULTS_DIR = ROOT_DIR / "results"
 
+load_dotenv(ROOT_DIR / ".env")
+
 
 def main():
-    tracker = MLflowTracker()
+    tracker = MLflowTracker(os.environ["MLFLOW_TRACKING_URI"], os.environ["MLFLOW_EXPERIMENT_NAME"])
 
     configLR = load_config(CONFIG_DIR / "logistic_regression.yaml")
     resultLR = ExperimentRunner(configLR, tracker).run()

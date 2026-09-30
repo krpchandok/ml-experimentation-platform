@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
-import os
+
 import mlflow
 import mlflow.sklearn
-from dotenv import load_dotenv
 
 
 class ExperimentTracker(ABC):
@@ -28,15 +26,14 @@ class ExperimentTracker(ABC):
         pass
 
     @abstractmethod
-    def end_run(self):
+    def end_run(self, status):
         pass
 
 
 class MLflowTracker(ExperimentTracker):
-    def __init__(self):
-        load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-        mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
-        mlflow.set_experiment(os.environ["MLFLOW_EXPERIMENT_NAME"])
+    def __init__(self, tracking_uri, experiment_name):
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment(experiment_name)
 
     def start_run(self, run_name):
         return mlflow.start_run(run_name=run_name)
@@ -53,10 +50,5 @@ class MLflowTracker(ExperimentTracker):
     def log_model(self, model, name):
         mlflow.sklearn.log_model(model, name=name, skops_trusted_types=["sklearn.tree._tree.Tree"])
 
-    def end_run(self):
-        mlflow.end_run()
-
-    def get_best_model(self, metric="accuracy", ascending=False):
-        order = "ASC" if ascending else "DESC"
-        runs = mlflow.search_runs(order_by=[f"metrics.{metric} {order}"], max_results=1)
-        return None if runs.empty else runs.iloc[0]
+    def end_run(self, status="FINISHED"):
+        mlflow.end_run(status=status)
