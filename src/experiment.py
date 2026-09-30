@@ -1,7 +1,10 @@
-from dataclasses import dataclass
-from .model import Models, Datasets, MODEL_BUILDERS
-from .trainer import SklearnTrainer
+from dataclasses import dataclass, asdict
+from model import Models, Datasets, MODEL_BUILDERS
+from trainer import SklearnTrainer
+from pathlib import Path
+import json
 import uuid
+import yaml
 from time import perf_counter
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
@@ -13,6 +16,17 @@ class ExperimentConfig:
     model: Models
     dataset: Datasets
     hyperparameters: dict ## C, iterations, random_seed
+
+
+def load_config(path):
+    with open(path) as f:
+        data = yaml.safe_load(f)
+
+    return ExperimentConfig(
+        model=Models(data["model"]),
+        dataset=Datasets(data["dataset"]),
+        hyperparameters=data["hyperparameters"],
+    )
 
 
 class ExperimentRunner:
@@ -82,3 +96,14 @@ class ExperimentResult:
     dataset: str
     metrics: dict
     runtime: float
+
+
+def save_result(result, directory):
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+
+    path = directory / f"{result.model}_{result.experiment_id}.json"
+    with open(path, "w") as f:
+        json.dump(asdict(result), f, indent=2)
+
+    return path
