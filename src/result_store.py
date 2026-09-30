@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import json
 import psycopg
-from experiment import save_result
+from src.experiment import save_result
 
 
 class ResultStore(ABC):

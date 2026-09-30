@@ -2,8 +2,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
-from experiment import ExperimentRunner, load_config, save_result
-from experiment_tracker import MLflowTracker
+import uuid
+from src.experiment import ExperimentRunner, load_config, save_result
+from src.experiment_tracker import MLflowTracker
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
@@ -19,11 +20,11 @@ def main():
     tracker = MLflowTracker(os.environ["MLFLOW_TRACKING_URI"], os.environ["MLFLOW_EXPERIMENT_NAME"])
 
     configLR = load_config(CONFIG_DIR / "logistic_regression.yaml")
-    resultLR = ExperimentRunner(configLR, tracker).run()
+    resultLR = ExperimentRunner(str(uuid.uuid4()), configLR, tracker).run()
     save_result(resultLR, RESULTS_DIR)
 
     configRF = load_config(CONFIG_DIR / "random_forest.yaml")
-    resultRF = ExperimentRunner(configRF, tracker).run()
+    resultRF = ExperimentRunner(str(uuid.uuid4()), configRF, tracker).run()
     save_result(resultRF, RESULTS_DIR)
 
     print(f"\nLogistic Regression\n, {resultLR}")

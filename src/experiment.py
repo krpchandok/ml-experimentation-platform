@@ -1,9 +1,8 @@
 from dataclasses import dataclass, asdict
-from model import Models, Datasets, MODEL_BUILDERS
-from trainer import SklearnTrainer
+from src.model import Models, Datasets, MODEL_BUILDERS
+from src.trainer import SklearnTrainer
 from pathlib import Path
 import json
-import uuid
 import yaml
 from time import perf_counter
 from sklearn.datasets import load_iris
@@ -34,16 +33,15 @@ def load_config(path):
 
 
 class ExperimentRunner:
-    def __init__(self, config, tracker):
+    def __init__(self, experiment_id, config, tracker):
+        self.experiment_id = experiment_id
         self.config = config
         self.tracker = tracker
 
     def run(self):
-        experiment_id = str(uuid.uuid4())
-
         start = perf_counter()
 
-        with self.tracker.start_run(run_name=experiment_id):
+        with self.tracker.start_run(run_name=self.experiment_id):
             self.tracker.set_tags({"model": self.config.model.value, "dataset": self.config.dataset.value})
             self.tracker.log_params(self.config.hyperparameters)
 
@@ -59,7 +57,7 @@ class ExperimentRunner:
             self.tracker.log_model(self.model, name="model")
 
         return ExperimentResult(
-            experiment_id=experiment_id,
+            experiment_id=self.experiment_id,
             model=self.config.model.value,
             dataset=self.config.dataset.value,
             metrics=metrics,

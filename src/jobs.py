@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 import uuid
 import yaml
-from kafka.producer import JobProducer
+from src.messaging.producer import JobProducer
+from src.job_store import PostgresJobStore
 
 class Status(Enum):
     PENDING = "pending"
@@ -26,16 +27,27 @@ class TrainingJob:
         }
 
 
-def submit_job(config_path, producer=None):
+def submit_job(config_path, producer=None, job_store=None):
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
+    return submit_job_from_config(
+            config,
+            producer=producer,
+            store=store,
+        )
+
+def submit_job_from_config(config, producer=None, store=None):
     job = TrainingJob(
         job_id=str(uuid.uuid4()),
         experiment_id=str(uuid.uuid4()),
         config=config,
     )
 
+    store = store or PostgresJobStore()
+
+    store.create_job(job)
     (producer or JobProducer()).send(job)
+
     return job
 

@@ -1,0 +1,8 @@
+model: logistic_regression
+dataset: iris
+hyperparameters:
+  C: 1.0
+  iterations: 100
+  random_seed: 42
+  split: 0.2
+  solver: lbfgs

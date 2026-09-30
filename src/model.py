@@ -1,5 +1,5 @@
 from enum import Enum
-from sk_models.model_builder import build_logistic_regression, build_random_forest
+from src.sk_models.model_builder import build_logistic_regression, build_random_forest
 
 
 class Models(Enum):

@@ -5,11 +5,12 @@ import json
 import os
 import sys
 
-from jobs import TrainingJob, Status
-from experiment import ExperimentRunner, config_from_dict
-from experiment_tracker import MLflowTracker
-from result_store import PostgresResultStore
-from kafka.producer import TRAINING_JOBS_TOPIC
+from src.jobs import TrainingJob, Status
+from src.experiment import ExperimentRunner, config_from_dict
+from src.experiment_tracker import MLflowTracker
+from src.result_store import PostgresResultStore
+from src.job_store import PostgresJobStore
+from src.messaging.producer import TRAINING_JOBS_TOPIC
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
@@ -25,6 +26,7 @@ class JobConsumer:
         })
         self.consumer.subscribe([topic])
         self.tracker = MLflowTracker(os.environ["MLFLOW_TRACKING_URI"], os.environ["MLFLOW_EXPERIMENT_NAME"])
+        self.job_store = PostgresJobStore()
 
     def run(self):
         print("Waiting for training jobs...")
@@ -45,6 +47,7 @@ class JobConsumer:
 
     def _handle_message(self, msg):
         payload = json.loads(msg.value())
+
         job = TrainingJob(
             job_id=payload["job_id"],
             experiment_id=payload["experiment_id"],
@@ -52,17 +55,40 @@ class JobConsumer:
             status=Status(payload["status"]),
         )
 
-        print(f"Running job {job.job_id} ({job.config['model']} / {job.config['dataset']})")
-
         try:
-            config = config_from_dict(job.config)
-            result = ExperimentRunner(config, self.tracker).run()
-            PostgresResultStore(result).save()
-            print(f"Job {job.job_id} completed: {result.metrics}")
-            self.consumer.commit(msg)
-        except Exception as e:
-            print(f"Job {job.job_id} failed, will retry on restart: {e}")
+            # Worker has actually started the job
+            self.job_store.update_status(
+                job.job_id,
+                Status.RUNNING.value
+            )
 
+            config = config_from_dict(job.config)
+
+            result = ExperimentRunner(
+                job.experiment_id,
+                config,
+                self.tracker
+            ).run()
+
+            PostgresResultStore(result).save()
+
+            # Everything succeeded
+            self.job_store.update_status(
+                job.job_id,
+                Status.COMPLETED.value
+            )
+
+            self.consumer.commit(msg)
+
+            print(f"Job {job.job_id} completed: {result.metrics}")
+
+        except Exception as e:
+            self.job_store.update_status(
+                job.job_id,
+                Status.FAILED.value
+            )
+
+            print(f"Job {job.job_id} failed: {e}")
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")

@@ -1,0 +1,6 @@
+model: random_forest
+dataset: iris
+hyperparameters:
+  n_estimators: 100
+  depth: 5
+  random_seed: 42
