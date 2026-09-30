@@ -135,3 +135,15 @@ MLflow + Postgres Results
 ```
 
 The system is designed so that individual components can evolve independently. For example, additional model frameworks such as PyTorch can be added to the training layer without changing the API, dataset pipeline, or messaging infrastructure.
+
+Next Steps
+
+Experiment Management — Group multiple training jobs under a single experiment and compare their results.
+
+Resource-Aware Scheduling — Add worker resource requirements and scheduling logic for different training workloads.
+
+Model Support — Extend the training interface beyond scikit-learn to support PyTorch and other frameworks.
+
+Experiment Dashboard — Build a lightweight UI for submitting experiments, monitoring jobs, and comparing metrics.
+
+Scalable Workers — Improve worker orchestration and parallel execution as experiment workloads grow.
