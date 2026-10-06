@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -6,9 +7,10 @@ import streamlit as st
 
 from dashboard import art, charts, data, scene, theme, wording
 from mlplat.predict import PlanError, format_hours
-from mlplat.run_store import default_runs_dir
+from mlplat.run_store import RUNS_DIR_ENV, default_runs_dir
 from mlplat.targets import TargetError, default_targets_path
 
+REPO_RUNS_DIR = Path(__file__).resolve().parents[1] / "runs"
 LIVE_REFRESH_S = 2
 TABLE_ROW_PX = 35
 TARGET_ART = {"home_kitchen": "oven_closed", "community_kitchen": "milk_bottle", "market_stall": "egg_basket",
@@ -18,7 +20,10 @@ e = theme.escape
 
 
 def runs_dir():
-    return str(default_runs_dir())
+    configured = default_runs_dir()
+    if os.environ.get(RUNS_DIR_ENV) or configured.exists():
+        return str(configured)
+    return str(REPO_RUNS_DIR)
 
 
 def chart_theme():

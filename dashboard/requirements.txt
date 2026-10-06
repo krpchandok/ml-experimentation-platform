@@ -1,0 +1,5 @@
+streamlit>=1.65
+plotly>=5.15
+pandas>=2.0
+PyYAML>=6.0
+Pillow>=10.0
