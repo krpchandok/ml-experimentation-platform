@@ -2,6 +2,8 @@
 
 mlplat watches a machine-learning training run from the operating system's point of view, tells you in plain language what slowed it down, and predicts where the full training run would be fastest and cheapest.
 
+**[Take the 1-minute tour of the live demo →](https://ml-experimentation-platform-demo-lcsqrdpo2ggnamdakqfexg.streamlit.app/tour?step=1)**
+
 ## Why I built it
 
 When you train a model, the GPU is the expensive part, so it should always be busy. In practice it often isn't. It sits idle while the CPU is still preparing the next batch of data (loading images, resizing them, augmenting them). Most tools only show you the loss curve, so you can't see the waiting at all.
@@ -70,7 +72,9 @@ Each part writes plain files (JSON lines) that the next part reads, so every run
 
 ## Try it
 
-You need Linux or WSL2, CMake, a C++17 compiler and Python 3.10 or newer. An NVIDIA GPU is optional.
+**In your browser, no install:** the [live demo](https://ml-experimentation-platform-demo-lcsqrdpo2ggnamdakqfexg.streamlit.app/) shows the real runs from the results above. Start with the [1-minute tour](https://ml-experimentation-platform-demo-lcsqrdpo2ggnamdakqfexg.streamlit.app/tour?step=1), then explore each run's story or compare runs before and after the fix.
+
+**On your own training code:** profiling your own runs needs a local install. You need Linux or WSL2, CMake, a C++17 compiler and Python 3.10 or newer. An NVIDIA GPU is optional.
 
 ```bash
 cmake -S agent -B agent/build && cmake --build agent/build -j
