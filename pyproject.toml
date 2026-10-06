@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlplat"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["PyYAML"]
+
+[project.optional-dependencies]
+mlflow = ["mlflow"]
+test = ["pytest"]
+
+[project.scripts]
+mlplat = "mlplat.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mlplat"]
