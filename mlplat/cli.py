@@ -1,10 +1,13 @@
 import argparse
 import json
+import os
+import subprocess
 import sys
+from pathlib import Path
 
 from mlplat.analyzer import analyze_run, format_report
 from mlplat.launcher import launch
-from mlplat.run_store import RunStore
+from mlplat.run_store import RUNS_DIR_ENV, RunStore, default_runs_dir
 
 
 def build_parser():
@@ -29,7 +32,27 @@ def build_parser():
     analyze.add_argument("run_id", nargs="?", default="latest")
     analyze.add_argument("--runs-dir")
     analyze.add_argument("--json", action="store_true")
+
+    dashboard = commands.add_parser("dashboard", help="open the Streamlit efficiency dashboard")
+    dashboard.add_argument("--runs-dir")
+    dashboard.add_argument("--port", type=int, default=8501)
     return parser
+
+
+def dashboard_command(runs_dir, port):
+    app = Path(__file__).resolve().parents[1] / "dashboard" / "app.py"
+    if not app.exists():
+        print(f"mlplat dashboard: {app} not found (the dashboard ships with the repository checkout)",
+              file=sys.stderr)
+        return 1
+    env = dict(os.environ)
+    env[RUNS_DIR_ENV] = str(Path(runs_dir).resolve()) if runs_dir else str(default_runs_dir().resolve())
+    command = [sys.executable, "-m", "streamlit", "run", str(app), "--server.port", str(port),
+               "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    try:
+        return subprocess.call(command, env=env)
+    except KeyboardInterrupt:
+        return 130
 
 
 def format_duration(seconds):
@@ -73,6 +96,8 @@ def main(argv=None):
         return list_runs(args.runs_dir)
     if args.command_name == "analyze":
         return analyze_command(args.run_id, args.runs_dir, args.json)
+    if args.command_name == "dashboard":
+        return dashboard_command(args.runs_dir, args.port)
 
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if not command:

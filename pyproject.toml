@@ -10,6 +10,8 @@ dependencies = ["PyYAML"]
 
 [project.optional-dependencies]
 mlflow = ["mlflow"]
+dashboard = ["streamlit>=1.50", "plotly>=5.15", "pandas"]
+examples = ["torch", "torchvision", "numpy"]
 test = ["pytest"]
 
 [project.scripts]
