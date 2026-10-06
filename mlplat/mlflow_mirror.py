@@ -51,6 +51,12 @@ def resource_metrics(records, Metric):
             metrics.append(Metric("resource.tree_cpu_pct", float(tree["cpu_pct"]), timestamp, step))
         if tree.get("rss_kb") is not None:
             metrics.append(Metric("resource.tree_rss_mb", tree["rss_kb"] / 1024.0, timestamp, step))
+        gpu = record.get("gpu")
+        if isinstance(gpu, dict):
+            for device in gpu.get("devices", []):
+                if device.get("util_pct") is not None:
+                    metrics.append(Metric(f"resource.gpu{device['index']}_util_pct", float(device["util_pct"]),
+                                          timestamp, step))
     return metrics
 
 

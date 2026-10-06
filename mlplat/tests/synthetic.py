@@ -81,8 +81,9 @@ class SyntheticRun:
         return self.run
 
 
-def gpu_row(util, devices=1, procs=None, mem_used_mb=2000.0):
+def gpu_row(util, devices=1, procs=None, mem_used_mb=2000.0, process_info=True):
     return {
+        "process_info": process_info,
         "devices": [{"index": index, "util_pct": util if isinstance(util, (int, float)) else util[index],
                      "mem_util_pct": 30.0, "mem_used_mb": mem_used_mb, "mem_total_mb": 8192.0}
                     for index in range(devices)],

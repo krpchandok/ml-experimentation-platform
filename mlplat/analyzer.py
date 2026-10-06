@@ -102,18 +102,30 @@ def percentile(values, fraction):
     return values[index]
 
 
+def after_warmup(records, warmup_steps):
+    stepped = [record for record in records if isinstance(record.get("step"), (int, float))]
+    if not warmup_steps or not stepped:
+        return records
+    first = stepped[0]["step"]
+    return [record for record in records
+            if not isinstance(record.get("step"), (int, float)) or record["step"] >= first + warmup_steps]
+
+
 def analysis_window(data):
-    steps = [record for record in data.metrics if "t_mono" in record]
+    warmup_steps = (data.meta.get("analysis") or {}).get("warmup_steps", 0)
+    steps = [record for record in after_warmup(data.metrics, warmup_steps) if "t_mono" in record]
     if len(steps) >= 2:
         start, end, source = steps[0]["t_mono"], steps[-1]["t_mono"], "metrics"
         inside = [sample for sample in data.samples if start <= sample["t_mono"] - sample["dt"] / 2 <= end]
         if len(inside) >= rules.MIN_WINDOW_SAMPLES:
-            return {"source": source, "start_mono": start, "end_mono": end, "samples": inside}
+            return {"source": source, "start_mono": start, "end_mono": end, "samples": inside, "metrics": steps,
+                    "warmup_steps": warmup_steps}
     samples = data.samples
     if not samples:
-        return {"source": "none", "start_mono": None, "end_mono": None, "samples": []}
+        return {"source": "none", "start_mono": None, "end_mono": None, "samples": [], "metrics": data.metrics,
+                "warmup_steps": 0}
     return {"source": "all_samples", "start_mono": samples[0]["t_mono"] - samples[0]["dt"],
-            "end_mono": samples[-1]["t_mono"], "samples": samples}
+            "end_mono": samples[-1]["t_mono"], "samples": samples, "metrics": data.metrics, "warmup_steps": 0}
 
 
 def role_of(data, entry):
@@ -147,14 +159,20 @@ def gpu_features(window_samples, tree_pids):
     if not rows:
         return None
     used = {proc["device"] for row in rows for proc in row.get("procs", []) if proc.get("pid") in tree_pids}
-    utils, mem_utils, mem_used, tree_mem = [], [], [], []
+    process_info = any(row.get("process_info") for row in rows)
+    utils, mem_utils, mem_used, tree_mem, power = [], [], [], [], []
     device_count, memory_total = 0, None
+    sources = set()
     for row in rows:
         devices = [device for device in row["devices"] if not used or device["index"] in used]
         device_count = max(device_count, len(devices))
         values = [device["util_pct"] for device in devices if device.get("util_pct") is not None]
         if values:
             utils.append(sum(values) / len(values))
+        sources.update(device["util_source"] for device in devices if device.get("util_source"))
+        values = [device["power_w"] for device in devices if device.get("power_w") is not None]
+        if values:
+            power.append(sum(values))
         values = [device["mem_util_pct"] for device in devices if device.get("mem_util_pct") is not None]
         if values:
             mem_utils.append(sum(values) / len(values))
@@ -164,7 +182,8 @@ def gpu_features(window_samples, tree_pids):
         totals = [device["mem_total_mb"] for device in devices if device.get("mem_total_mb") is not None]
         if totals:
             memory_total = sum(totals)
-        tree = [proc.get("mem_used_mb") or 0 for proc in row.get("procs", []) if proc.get("pid") in tree_pids]
+        tree = [proc["mem_used_mb"] for proc in row.get("procs", [])
+                if proc.get("pid") in tree_pids and proc.get("mem_used_mb") is not None]
         if tree:
             tree_mem.append(sum(tree))
     if not utils:
@@ -177,6 +196,10 @@ def gpu_features(window_samples, tree_pids):
         memory_used_peak_mb=max(mem_used) if mem_used else None,
         memory_total_mb=memory_total,
         tree_memory_peak_mb=max(tree_mem) if tree_mem else None,
+        process_info=process_info,
+        tree_on_gpu=bool(used) if process_info else None,
+        power_mean_w=sum(power) / len(power) if power else None,
+        util_source="+".join(sorted(sources)) or None,
     )
 
 
@@ -284,7 +307,7 @@ def build_features(data, window):
         majflt_late_per_s=late_majflt,
         oom_kills=oom_kills,
         exit_code=data.meta.get("exit_code"),
-        data_wait_fraction=data_wait_fraction(data.metrics),
+        data_wait_fraction=data_wait_fraction(window["metrics"]),
         gpu=gpu_features(samples, tree_pids),
     )
     return features, {"usable_cores_source": limit_source}
@@ -426,7 +449,7 @@ def analyze_run(run):
     window = analysis_window(data)
     features, feature_notes = build_features(data, window)
     rows = process_rows(data, window)
-    steps = step_stats(data.metrics)
+    steps = step_stats(window["metrics"])
     decision = rules.decide(features, missing_reason(data))
     notes = []
     if window["source"] == "all_samples" and data.metrics:
@@ -443,6 +466,7 @@ def analyze_run(run):
         "generated_at": time.time(),
         "window": {"source": window["source"], "start_mono": window["start_mono"], "end_mono": window["end_mono"],
                    "seconds": features.window_seconds, "samples": features.window_samples,
+                   "warmup_steps": window["warmup_steps"],
                    "warmup_excluded_s": (window["start_mono"] - data.meta["start_mono"])
                    if window["start_mono"] is not None and data.meta.get("start_mono") is not None else None},
         "totals": totals(data, window, features, steps, rows),

@@ -26,8 +26,8 @@ MIN_WINDOW_SAMPLES = 3
 OOM_EXIT_CODE = 137
 
 SEVERITY_ORDER = ("critical", "bottleneck", "warning", "ok", "info", "unknown")
-RULE_PRIORITY = ("memory_pressure", "preprocessing_bound", "io_bound", "main_process_bound", "healthy",
-                 "underutilized", "insufficient_data")
+RULE_PRIORITY = ("memory_pressure", "gpu_not_used", "preprocessing_bound", "io_bound", "main_process_bound",
+                 "healthy", "underutilized", "insufficient_data")
 
 
 @dataclass
@@ -39,6 +39,10 @@ class GpuFeatures:
     memory_used_peak_mb: Optional[float] = None
     memory_total_mb: Optional[float] = None
     tree_memory_peak_mb: Optional[float] = None
+    process_info: bool = False
+    tree_on_gpu: Optional[bool] = None
+    power_mean_w: Optional[float] = None
+    util_source: Optional[str] = None
 
 
 @dataclass
@@ -99,9 +103,15 @@ def waits_for_data(features):
 
 def consumer_starved(features):
     if features.gpu is not None:
-        starved = features.gpu.util_mean_pct < GPU_STARVED_PCT
-        return starved, [f"Meanwhile GPU utilization averaged {pct(features.gpu.util_mean_pct)} "
-                         f"(starved below {pct(GPU_STARVED_PCT)})."] + data_wait_evidence(features)
+        util = features.gpu.util_mean_pct
+        if util < GPU_STARVED_PCT:
+            return True, [f"Meanwhile GPU utilization averaged {pct(util)} "
+                          f"(starved below {pct(GPU_STARVED_PCT)})."] + data_wait_evidence(features)
+        if util < GPU_BUSY_PCT and waits_for_data(features):
+            return True, [f"Meanwhile GPU utilization averaged only {pct(util)} (busy at {pct(GPU_BUSY_PCT)}) and the "
+                          f"training loop reported spending {features.data_wait_fraction:.0%} of its time waiting for "
+                          f"the next batch (starved at {DATA_WAIT_HIGH_FRACTION:.0%}, logged data_time)."]
+        return False, []
     if features.main_cpu_mean_pct < MAIN_WAITING_PCT:
         return True, [f"Meanwhile the main training process averaged {pct(features.main_cpu_mean_pct)} of a core, "
                       f"so it spent most of its time waiting for batches (waiting below {pct(MAIN_WAITING_PCT)})."
@@ -157,7 +167,9 @@ def rule_main_process_bound(features):
     if main < MAIN_SATURATED_PCT or not (single_thread or inline_loading):
         return None
     workers_idle = features.worker_count == 0 or (features.worker_cpu_mean_pct or 0) < WORKER_IDLE_PCT
-    if not workers_idle or consumer_busy(features):
+    pipeline_keeps_up = (features.gpu is not None and features.data_wait_fraction is not None
+                         and features.data_wait_fraction <= DATA_WAIT_LOW_FRACTION)
+    if not (workers_idle or pipeline_keeps_up) or consumer_busy(features):
         return None
     if single_thread:
         evidence = [f"The main training process averaged {pct(main)} of one core, i.e. a single thread was "
@@ -173,6 +185,15 @@ def rule_main_process_bound(features):
             "Set DataLoader num_workers > 0 so preprocessing runs in parallel with the training step.",
             "Profile the loop (py-spy, torch.profiler) to separate data time from step time.",
         ]
+    elif not workers_idle:
+        evidence.append(f"The input pipeline kept up: the loop waited for data only {features.data_wait_fraction:.0%} "
+                        f"of the time (keeping up at or below {DATA_WAIT_LOW_FRACTION:.0%}), so the GPU idles between "
+                        f"kernels launched by the saturated Python thread.")
+        suggestions = [
+            "Remove per-step host-device syncs: .item(), .cpu(), printing or logging tensors every step, and "
+            "explicit torch.cuda.synchronize().",
+            "Do more work per Python step: a larger batch size, torch.compile or CUDA graphs, mixed precision.",
+        ]
     else:
         evidence.append(f"The {features.worker_count} data-loader worker(s) were mostly idle "
                         f"({pct(features.worker_cpu_mean_pct)} of a core each, idle below {pct(WORKER_IDLE_PCT)}).")
@@ -184,7 +205,8 @@ def rule_main_process_bound(features):
     if features.gpu is not None:
         evidence.append(f"GPU utilization averaged {pct(features.gpu.util_mean_pct)} "
                         f"(busy at {pct(GPU_BUSY_PCT)}).")
-    evidence += data_wait_evidence(features)
+    if workers_idle:
+        evidence += data_wait_evidence(features)
     return Finding(
         verdict="main_process_bound",
         severity="bottleneck",
@@ -285,6 +307,33 @@ def rule_memory_pressure(features):
     )
 
 
+def rule_gpu_not_used(features):
+    gpu = features.gpu
+    if gpu is None or not gpu.process_info or gpu.tree_on_gpu is not False:
+        return None
+    if gpu.util_mean_pct >= GPU_STARVED_PCT:
+        return None
+    return Finding(
+        verdict="gpu_not_used",
+        severity="bottleneck",
+        title="GPU not used: none of this run's processes are on the GPU",
+        evidence=[
+            "NVML listed compute processes on the GPU during the run, but none of them belong to this run's "
+            "process tree.",
+            f"GPU utilization averaged {pct(gpu.util_mean_pct)} while the main process averaged "
+            f"{pct(features.main_cpu_mean_pct)} of a core.",
+        ],
+        suggestions=[
+            "Check that the model and each batch are moved to the device (model.to('cuda'), batch.to('cuda')) and "
+            "that torch.cuda.is_available() is True inside the run.",
+            "Inside a container NVML can report host PIDs that do not match the run's PIDs; confirm with nvidia-smi "
+            "before acting on this verdict.",
+        ],
+        signals={"gpu_util_mean_pct": gpu.util_mean_pct, "tree_on_gpu": gpu.tree_on_gpu,
+                 "main_cpu_mean_pct": features.main_cpu_mean_pct},
+    )
+
+
 def rule_healthy(features):
     if features.gpu is not None:
         if features.gpu.util_mean_pct < GPU_BUSY_PCT:
@@ -344,8 +393,8 @@ def rule_underutilized(features):
     )
 
 
-BOTTLENECK_RULES = (rule_memory_pressure, rule_preprocessing_bound, rule_io_bound, rule_main_process_bound,
-                    rule_healthy)
+BOTTLENECK_RULES = (rule_memory_pressure, rule_gpu_not_used, rule_preprocessing_bound, rule_io_bound,
+                    rule_main_process_bound, rule_healthy)
 
 
 def insufficient_data(reason):

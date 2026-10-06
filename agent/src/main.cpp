@@ -13,6 +13,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <memory>
+#include <unordered_set>
+
+#include "nvml.h"
 #include "procfs.h"
 #include "records.h"
 #include "sampler.h"
@@ -28,10 +32,13 @@ struct Options {
     int interval_ms = 1000;
     std::string out = "-";
     std::string proc_root = "/proc";
+    bool gpu = true;
+    std::string nvml_library = "libnvidia-ml.so.1";
 };
 
 constexpr const char* kUsage =
-    "usage: mlplat-agent --pid <PID> [--interval-ms <ms>] [--out <path|->] [--proc-root <dir>]\n";
+    "usage: mlplat-agent --pid <PID> [--interval-ms <ms>] [--out <path|->] [--proc-root <dir>]\n"
+    "                    [--gpu auto|off] [--nvml-library <path>]\n";
 
 std::optional<Options> parse_options(int argc, char** argv) {
     Options options;
@@ -47,6 +54,11 @@ std::optional<Options> parse_options(int argc, char** argv) {
             options.out = value;
         } else if (arg == "--proc-root" && (value = next())) {
             options.proc_root = value;
+        } else if (arg == "--gpu" && (value = next()) && (std::strcmp(value, "auto") == 0 ||
+                                                           std::strcmp(value, "off") == 0)) {
+            options.gpu = std::strcmp(value, "auto") == 0;
+        } else if (arg == "--nvml-library" && (value = next())) {
+            options.nvml_library = value;
         } else {
             return std::nullopt;
         }
@@ -193,6 +205,21 @@ int main(int argc, char** argv) {
     header.proc_root = options->proc_root;
     header.t_mono = start_mono;
     header.t_wall = wall_now();
+
+    std::unique_ptr<mlplat::NvmlSampler> nvml;
+    if (options->gpu) {
+        double init_started = monotonic_now();
+        nvml = mlplat::NvmlSampler::open(options->nvml_library, header.gpu.reason);
+        header.gpu.init_ms = (monotonic_now() - init_started) * 1000.0;
+    } else {
+        header.gpu.reason = "disabled with --gpu off";
+    }
+    if (nvml) {
+        header.gpu.available = true;
+        header.gpu.driver_version = nvml->driver_version();
+        header.gpu.library = nvml->library_path();
+        header.gpu.devices = nvml->devices();
+    }
     sink.write(mlplat::format_header(header));
 
     mlplat::Sampler sampler(config);
@@ -205,6 +232,7 @@ int main(int argc, char** argv) {
         for (const auto& event : *initial_events) sink.write(mlplat::format_event(event, now));
         end.max_tracked = sampler.tracked_count();
     }
+    end.startup_cpu_seconds = process_cpu_seconds(nullptr) - start_cpu;
 
     const double interval = options->interval_ms / 1000.0;
     double deadline = monotonic_now() + interval;
@@ -218,12 +246,19 @@ int main(int argc, char** argv) {
         mlplat::Sample sample = sampler.sample(sample_started);
         end.max_tracked = std::max<uint64_t>({end.max_tracked, sampler.tracked_count(), sample.processes.size()});
 
+        std::optional<mlplat::GpuSample> gpu;
+        if (nvml) {
+            std::unordered_set<int> tracked_pids;
+            for (const auto& process : sample.processes) tracked_pids.insert(process.pid);
+            gpu = nvml->sample(tracked_pids);
+        }
+
         mlplat::AgentUsage usage;
         usage.cpu_seconds = process_cpu_seconds(&usage.max_rss_kb) - start_cpu;
         usage.sample_us = (monotonic_now() - sample_started) * 1e6;
 
         for (const auto& event : sample.events) sink.write(mlplat::format_event(event, sample_started));
-        sink.write(mlplat::format_sample(sample, ++end.samples, sample_started, wall, usage));
+        sink.write(mlplat::format_sample(sample, ++end.samples, sample_started, wall, usage, gpu));
 
         sample_us_total += usage.sample_us;
         end.sample_us_max = std::max(end.sample_us_max, usage.sample_us);

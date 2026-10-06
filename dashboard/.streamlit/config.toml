@@ -1,0 +1,42 @@
+[server]
+headless = true
+address = "localhost"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+font = "Nunito:https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap"
+headingFont = "Fredoka:https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap"
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+baseRadius = "1rem"
+buttonRadius = "full"
+showSidebarBorder = false
+showWidgetBorder = true
+
+[theme.light]
+primaryColor = "#B93C0C"
+backgroundColor = "#FBF5EC"
+secondaryBackgroundColor = "#F4E9DA"
+textColor = "#2E2219"
+linkColor = "#A3360C"
+borderColor = "#E6D5BF"
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
+
+[theme.light.sidebar]
+backgroundColor = "#F4E9DA"
+
+[theme.dark]
+primaryColor = "#F4A261"
+backgroundColor = "#17120E"
+secondaryBackgroundColor = "#241B15"
+textColor = "#F6EDE1"
+linkColor = "#F7B27A"
+borderColor = "#3A2D24"
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
+
+[theme.dark.sidebar]
+backgroundColor = "#1F1712"

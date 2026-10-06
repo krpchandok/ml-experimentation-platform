@@ -5,8 +5,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from mlplat import planner
 from mlplat.analyzer import analyze_run, format_report
 from mlplat.launcher import launch
+from mlplat.predict import PlanError
+from mlplat.targets import TargetError
 from mlplat.run_store import RUNS_DIR_ENV, RunStore, default_runs_dir
 
 
@@ -21,9 +24,27 @@ def build_parser():
     run.add_argument("--agent", dest="agent_path")
     run.add_argument("--interval-ms", type=int, default=1000)
     run.add_argument("--mlflow", choices=["auto", "on", "off"], default="auto")
+    run.add_argument("--no-analyze", action="store_true")
+    run.add_argument("--gpu", choices=["auto", "off"], default="auto")
     run.add_argument("command", nargs=argparse.REMAINDER)
 
-    run.add_argument("--no-analyze", action="store_true")
+    plan = commands.add_parser("plan", help="profile a short run and recommend where to train")
+    plan.add_argument("--name")
+    plan.add_argument("--total-steps", type=int, required=True)
+    plan.add_argument("--targets")
+    plan.add_argument("--from-run")
+    plan.add_argument("--config")
+    plan.add_argument("--runs-dir")
+    plan.add_argument("--agent", dest="agent_path")
+    plan.add_argument("--interval-ms", type=int, default=1000)
+    plan.add_argument("--gpu", choices=["auto", "off"], default="auto")
+    plan.add_argument("--mlflow", choices=["auto", "on", "off"], default="off")
+    plan.add_argument("--warmup-steps", type=int, default=planner.DEFAULT_WARMUP_STEPS)
+    plan.add_argument("--window-steps", type=int, default=planner.DEFAULT_WINDOW_STEPS)
+    plan.add_argument("--window-seconds", type=float, default=planner.DEFAULT_WINDOW_SECONDS)
+    plan.add_argument("--prefer", choices=["balanced", "time", "cost"], default="balanced")
+    plan.add_argument("--json", action="store_true")
+    plan.add_argument("command", nargs=argparse.REMAINDER)
 
     listing = commands.add_parser("list", help="list runs in the run store")
     listing.add_argument("--runs-dir")
@@ -39,6 +60,27 @@ def build_parser():
     return parser
 
 
+def plan_command(args, command):
+    try:
+        if args.from_run:
+            run = RunStore(args.runs_dir).get(args.from_run)
+            plan = planner.plan_for_run(run, args.total_steps, args.targets, prefer=args.prefer)
+        else:
+            if not command or not args.name:
+                print("mlplat plan: needs --name and a training command after --, or --from-run", file=sys.stderr)
+                return 2
+            _, plan = planner.profile_and_plan(
+                args.name, command, args.total_steps, targets_path=args.targets, warmup_steps=args.warmup_steps,
+                window_steps=args.window_steps, window_seconds=args.window_seconds, config_path=args.config,
+                runs_dir=args.runs_dir, agent_path=args.agent_path, interval_ms=args.interval_ms,
+                mlflow_mode=args.mlflow, gpu=args.gpu, prefer=args.prefer)
+    except (KeyError, PlanError, TargetError) as error:
+        print(f"mlplat plan: {error.args[0]}", file=sys.stderr)
+        return 1
+    print(json.dumps(plan, indent=2) if args.json else planner.format_plan(plan))
+    return 0
+
+
 def dashboard_command(runs_dir, port):
     app = Path(__file__).resolve().parents[1] / "dashboard" / "app.py"
     if not app.exists():
@@ -50,7 +92,7 @@ def dashboard_command(runs_dir, port):
     command = [sys.executable, "-m", "streamlit", "run", str(app), "--server.port", str(port),
                "--server.headless", "true", "--browser.gatherUsageStats", "false"]
     try:
-        return subprocess.call(command, env=env)
+        return subprocess.call(command, env=env, cwd=app.parent)
     except KeyboardInterrupt:
         return 130
 
@@ -100,6 +142,8 @@ def main(argv=None):
         return dashboard_command(args.runs_dir, args.port)
 
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
+    if args.command_name == "plan":
+        return plan_command(args, command)
     if not command:
         print("mlplat run: missing training command after --", file=sys.stderr)
         return 2
@@ -107,7 +151,8 @@ def main(argv=None):
         print("mlplat run: --interval-ms must be at least 10", file=sys.stderr)
         return 2
     return launch(args.name, command, config_path=args.config, runs_dir=args.runs_dir, agent_path=args.agent_path,
-                  interval_ms=args.interval_ms, mlflow_mode=args.mlflow, analyze=not args.no_analyze)
+                  interval_ms=args.interval_ms, mlflow_mode=args.mlflow, analyze=not args.no_analyze,
+                  gpu=args.gpu)
 
 
 if __name__ == "__main__":

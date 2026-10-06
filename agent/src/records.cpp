@@ -57,6 +57,64 @@ void write_process(JsonWriter& json, const ProcessSample& process) {
     json.end_object();
 }
 
+void write_unavailable(JsonWriter& json, const std::vector<std::string>& names) {
+    if (names.empty()) return;
+    json.key("unavailable").begin_array();
+    for (const std::string& name : names) json.value(name);
+    json.end_array();
+}
+
+void write_gpu_header(JsonWriter& json, const GpuHeader& gpu) {
+    json.key("gpu").begin_object().field("available", gpu.available);
+    if (!gpu.available) {
+        json.field("reason", gpu.reason).end_object();
+        return;
+    }
+    json.field("driver", gpu.driver_version).field("library", gpu.library).field("init_ms", gpu.init_ms);
+    json.key("devices").begin_array();
+    for (const GpuDeviceInfo& device : gpu.devices) {
+        json.begin_object()
+            .field("index", static_cast<uint64_t>(device.index))
+            .field("name", device.name)
+            .field("uuid", device.uuid)
+            .field("mem_total_mb", device.memory_total_mb)
+            .end_object();
+    }
+    json.end_array().end_object();
+}
+
+void write_gpu_sample(JsonWriter& json, const std::optional<GpuSample>& gpu) {
+    if (!gpu) {
+        json.field("gpu", "unavailable");
+        return;
+    }
+    json.key("gpu").begin_object().field("process_info", gpu->process_info);
+    json.key("devices").begin_array();
+    for (const GpuDeviceSample& device : gpu->devices) {
+        json.begin_object()
+            .field("index", static_cast<uint64_t>(device.index))
+            .field("util_pct", device.util_pct)
+            .field("util_source", device.util_source)
+            .field("mem_util_pct", device.mem_util_pct)
+            .field("mem_used_mb", device.mem_used_mb)
+            .field("mem_total_mb", device.mem_total_mb)
+            .field("power_w", device.power_w)
+            .field("temp_c", device.temp_c);
+        write_unavailable(json, device.unavailable);
+        json.end_object();
+    }
+    json.end_array();
+    json.key("procs").begin_array();
+    for (const GpuProcessSample& process : gpu->processes) {
+        json.begin_object()
+            .field("pid", process.pid)
+            .field("device", static_cast<uint64_t>(process.device))
+            .field("mem_used_mb", process.mem_used_mb)
+            .end_object();
+    }
+    json.end_array().end_object();
+}
+
 }
 
 std::string format_header(const HeaderInfo& header) {
@@ -75,8 +133,9 @@ std::string format_header(const HeaderInfo& header) {
         .field("hostname", header.hostname)
         .field("proc_root", header.proc_root)
         .field("t_mono", header.t_mono)
-        .field("t_wall", header.t_wall)
-        .end_object();
+        .field("t_wall", header.t_wall);
+    write_gpu_header(json, header.gpu);
+    json.end_object();
     return json.str();
 }
 
@@ -99,7 +158,7 @@ std::string format_event(const ProcessEvent& event, double t_mono) {
 }
 
 std::string format_sample(const Sample& sample, uint64_t seq, double t_mono, double t_wall,
-                          const AgentUsage& agent) {
+                          const AgentUsage& agent, const std::optional<GpuSample>& gpu) {
     double tree_cpu = 0;
     uint64_t tree_rss = 0;
     for (const ProcessSample& process : sample.processes) {
@@ -141,6 +200,8 @@ std::string format_sample(const Sample& sample, uint64_t seq, double t_mono, dou
     for (const ProcessSample& process : sample.processes) write_process(json, process);
     json.end_array();
 
+    write_gpu_sample(json, gpu);
+
     json.key("agent").begin_object()
         .field("cpu_s", agent.cpu_seconds)
         .field("max_rss_kb", agent.max_rss_kb)
@@ -161,6 +222,7 @@ std::string format_end(const EndInfo& end) {
         .field("t_mono", end.t_mono)
         .field("t_wall", end.t_wall)
         .field("agent_cpu_s", end.agent_cpu_seconds)
+        .field("startup_cpu_s", end.startup_cpu_seconds)
         .field("agent_wall_s", end.agent_wall_seconds)
         .field("agent_cpu_pct", cpu_pct)
         .field("sample_us_mean", end.sample_us_mean)

@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import time
 
 import numpy as np
@@ -23,6 +24,7 @@ DEFAULTS = {
     "lr": 0.05,
     "seed": 0,
     "slowdown_ms": 0.0,
+    "log_every": 1,
     "dataset_size": 50000,
 }
 
@@ -137,10 +139,11 @@ def main():
             optimizer.step()
             if settings["slowdown_ms"]:
                 time.sleep(settings["slowdown_ms"] / 1000.0)
-            synchronize(device)
-            compute_time = time.perf_counter() - compute_started
-            accuracy = (logits.argmax(dim=1) == labels).float().mean()
-            mlplat.log(step=step, loss=loss, accuracy=accuracy, data_time=data_time, compute_time=compute_time)
+            if step % settings["log_every"] == 0:
+                synchronize(device)
+                compute_time = time.perf_counter() - compute_started
+                accuracy = (logits.argmax(dim=1) == labels).float().mean()
+                mlplat.log(step=step, loss=loss, accuracy=accuracy, data_time=data_time, compute_time=compute_time)
             step += 1
             if step % 50 == 0:
                 print(f"step {step} loss {loss.item():.3f} acc {accuracy.item():.3f} "
@@ -152,4 +155,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("stopped early (interrupted)", flush=True)
+        sys.exit(130)

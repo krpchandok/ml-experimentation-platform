@@ -1,0 +1,126 @@
+targets:
+  - id: colab-free
+    name: Colab (free)
+    description: Free shared notebook GPU. The GPU type and session length are not guaranteed.
+    bakery: community_kitchen
+    runnable_here: false
+    gpu_name:
+      value: NVIDIA T4
+      placeholder: true
+      source: Run nvidia-smi in a Colab notebook; free-tier GPU assignment varies.
+    relative_gpu_speed:
+      value: 0.5
+      placeholder: true
+      source: Run mlplat plan on Colab and divide this machine's compute time per step by Colab's.
+    relative_cpu_speed:
+      value: 1.0
+      placeholder: true
+      source: Compare data-prep CPU-seconds per step from mlplat plan on both machines.
+    cpu_cores:
+      value: 2
+      placeholder: true
+      source: Run nproc in a Colab notebook.
+    memory_gb:
+      value: 12
+      placeholder: true
+      source: Run free -g in a Colab notebook.
+    gpu_memory_gb:
+      value: 15
+      placeholder: true
+      source: Run nvidia-smi in a Colab notebook.
+    cost_per_hour:
+      value: 0
+      placeholder: true
+      source: https://colab.research.google.com/signup (free tier).
+    session_hours:
+      value: 12
+      placeholder: true
+      source: https://research.google.com/colaboratory/faq.html (maximum lifetime; often shorter on the free tier).
+    weekly_hours:
+      value: null
+      placeholder: true
+      source: Colab does not publish a fixed weekly GPU quota for the free tier; set one if you see usage limits.
+
+  - id: kaggle
+    name: Kaggle
+    description: Free notebook GPU with a weekly hour quota.
+    bakery: market_stall
+    runnable_here: false
+    gpu_name:
+      value: NVIDIA P100 or 2x T4
+      placeholder: true
+      source: https://www.kaggle.com/docs/notebooks (accelerator options).
+    relative_gpu_speed:
+      value: 0.5
+      placeholder: true
+      source: Run mlplat plan on Kaggle and divide this machine's compute time per step by Kaggle's.
+    relative_cpu_speed:
+      value: 1.0
+      placeholder: true
+      source: Compare data-prep CPU-seconds per step from mlplat plan on both machines.
+    cpu_cores:
+      value: 4
+      placeholder: true
+      source: Run nproc in a Kaggle notebook.
+    memory_gb:
+      value: 29
+      placeholder: true
+      source: Run free -g in a Kaggle notebook.
+    gpu_memory_gb:
+      value: 16
+      placeholder: true
+      source: Run nvidia-smi in a Kaggle notebook.
+    cost_per_hour:
+      value: 0
+      placeholder: true
+      source: https://www.kaggle.com/docs/notebooks (free).
+    session_hours:
+      value: 12
+      placeholder: true
+      source: https://www.kaggle.com/docs/notebooks (session limits).
+    weekly_hours:
+      value: 30
+      placeholder: true
+      source: Your Kaggle account settings show the current weekly GPU quota.
+
+  - id: cloud-gpu
+    name: Cloud GPU
+    description: A rented GPU machine billed by the hour. Fill in the instance you would actually rent.
+    bakery: rented_bakery
+    runnable_here: false
+    gpu_name:
+      value: Fill in the GPU model
+      placeholder: true
+      source: Your cloud provider's instance page.
+    relative_gpu_speed:
+      value: 2.0
+      placeholder: true
+      source: Run mlplat plan on the instance and divide this machine's compute time per step by the instance's.
+    relative_cpu_speed:
+      value: 1.0
+      placeholder: true
+      source: Compare data-prep CPU-seconds per step from mlplat plan on both machines.
+    cpu_cores:
+      value: 8
+      placeholder: true
+      source: Your cloud provider's instance page (vCPU count).
+    memory_gb:
+      value: 32
+      placeholder: true
+      source: Your cloud provider's instance page.
+    gpu_memory_gb:
+      value: 24
+      placeholder: true
+      source: Your cloud provider's instance page.
+    cost_per_hour:
+      value: 1.0
+      placeholder: true
+      source: Your cloud provider's current on-demand price for the instance, in USD per hour.
+    session_hours:
+      value: null
+      placeholder: true
+      source: Usually no session limit; set one if your provider has one.
+    weekly_hours:
+      value: null
+      placeholder: true
+      source: Usually no weekly limit; set your own budget cap here if you want one.

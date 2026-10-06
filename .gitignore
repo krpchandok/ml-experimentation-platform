@@ -6,5 +6,7 @@ __pycache__/
 data/
 agent/build/
 runs/
+dashboard/assets/vendor/
 *.egg-info/
 .pytest_cache/
+

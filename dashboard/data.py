@@ -4,14 +4,22 @@ from typing import Optional
 
 import pandas as pd
 
+from dashboard import wording
+from dashboard.scene import SceneNumbers
 from mlplat.analyzer import load_run_data
-from mlplat.run_store import RunStore
+from mlplat.planner import read_plan
+from mlplat.predict import PlanError, build_plan, extract_profile, model_step
+from mlplat.run_store import RunStore, read_jsonl
+from mlplat.targets import load_targets, local_target
 
 MAX_NAMED_PROCESSES = 7
 OTHER_PROCESSES = "other processes"
 ROLLING_STEPS = 9
 MIB = 1024 * 1024
 RESERVED_METRIC_KEYS = {"t_mono", "t_wall", "step"}
+DEFAULT_TOTAL_STEPS = 20000
+OVEN_BOUND_WAIT = 0.10
+QUEUE_PREP_FRACTION = 0.85
 
 
 @dataclass
@@ -149,6 +157,89 @@ def load_detail(run):
     processes = pd.DataFrame(summary["processes"]) if summary and summary.get("processes") else pd.DataFrame()
     return RunDetail(run.run_id, data.meta, summary, origin, processes, series, tree, gpu_frame,
                      metrics_frame(data.metrics, origin), window)
+
+
+def has_plan(run):
+    return (run.path / "plan.json").exists()
+
+
+def planned_total_steps(run, fallback=DEFAULT_TOTAL_STEPS):
+    plan = read_plan(run)
+    if plan:
+        return int(plan["total_steps"])
+    request = run.read_meta().get("plan_request") or {}
+    return int(request.get("total_steps") or fallback)
+
+
+def plan_in_memory(run, total_steps, prefer="balanced", targets_path=None):
+    meta = run.read_meta()
+    header = next((record for record in read_jsonl(run.resources_path) if record.get("type") == "header"), None)
+    targets = [local_target(meta, header)] + load_targets(targets_path)
+    return build_plan(extract_profile(run), targets, total_steps, prefer)
+
+
+def scene_numbers(run, summary, estimate=False):
+    roles = summary.get("roles") or {}
+    workers_role = roles.get("workers") or {}
+    workers = int(round(workers_role.get("count_median") or 0))
+    worker_busy = workers_role.get("cpu_mean_pct")
+    worker_busy = worker_busy / 100.0 if worker_busy is not None else None
+    totals = summary.get("totals") or {}
+    features = summary.get("features") or {}
+    gpu = summary.get("gpu") or {}
+    step = totals.get("step_time_mean_s") or totals.get("step_time_median_s") or 1.0
+    if gpu.get("util_mean_pct") is not None:
+        oven_busy = gpu["util_mean_pct"] / 100.0
+    elif features.get("data_wait_fraction") is not None:
+        oven_busy = 1 - features["data_wait_fraction"]
+    else:
+        oven_busy = None
+    waiting = features.get("data_wait_fraction")
+    if waiting is None and oven_busy is not None:
+        waiting = 1 - oven_busy
+    if waiting is None:
+        try:
+            profile = extract_profile(run, summary)
+            _, prep, _ = model_step(profile, local_target(run.read_meta()), workers)
+            compute = profile.compute_s
+        except PlanError:
+            compute, prep = step, step * QUEUE_PREP_FRACTION
+    elif waiting <= OVEN_BOUND_WAIT:
+        compute, prep = step, step * QUEUE_PREP_FRACTION
+    else:
+        compute, prep = step * (1 - waiting), step
+    reads = [value for value in (features.get("main_read_bytes_per_s"), features.get("worker_read_bytes_per_s"))
+             if value is not None]
+    verdict = (summary.get("verdict") or {}).get("primary", "insufficient_data")
+    return SceneNumbers(
+        verdict=verdict,
+        workers=workers,
+        worker_busy=worker_busy,
+        compute_s=compute,
+        prep_s=prep,
+        oven_busy=oven_busy,
+        steps_per_s=totals.get("steps_per_sec"),
+        read_mib_s=sum(reads) / MIB if reads else None,
+        slowest_label=wording.slowest_label(verdict, workers, worker_busy),
+        slowest_stage=wording.SLOWEST_STAGE.get(verdict),
+        estimate=estimate,
+    )
+
+
+def oven_idle_seconds(summary):
+    window = summary.get("window") or {}
+    span = window.get("seconds")
+    gpu = summary.get("gpu") or {}
+    wait = (summary.get("features") or {}).get("data_wait_fraction")
+    if not span:
+        return None, None, None
+    if gpu.get("util_mean_pct") is not None:
+        busy = gpu["util_mean_pct"] / 100.0
+    elif wait is not None:
+        busy = 1 - wait
+    else:
+        return None, span, None
+    return span * (1 - busy), span, busy
 
 
 def metrics_frame(records, origin):

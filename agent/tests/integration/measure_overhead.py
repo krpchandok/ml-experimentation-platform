@@ -11,7 +11,7 @@ from agent_helpers import WORKLOAD, read_records
 DEFAULT_AGENT = Path(__file__).resolve().parents[2] / "build" / "mlplat-agent"
 
 
-def measure(agent, seconds, interval_ms, extra_idle, background):
+def measure(agent, seconds, interval_ms, extra_idle, background, gpu="off"):
     sleepers = [subprocess.Popen(["sleep", str(seconds + 30)]) for _ in range(background)]
     try:
         with tempfile.TemporaryDirectory() as directory:
@@ -21,7 +21,7 @@ def measure(agent, seconds, interval_ms, extra_idle, background):
                 "--pid-file", str(Path(directory) / "pids.json"), "--extra-idle", str(extra_idle),
             ])
             agent_process = subprocess.Popen([str(agent), "--pid", str(workload.pid), "--interval-ms",
-                                              str(interval_ms), "--out", str(out)])
+                                              str(interval_ms), "--out", str(out), "--gpu", gpu])
             workload.wait()
             _, _, usage = os.wait4(agent_process.pid, 0)
             end = read_records(out)[-1]
@@ -33,6 +33,7 @@ def measure(agent, seconds, interval_ms, extra_idle, background):
     external_cpu = usage.ru_utime + usage.ru_stime
     return {
         "interval_ms": interval_ms,
+        "gpu": gpu,
         "tracked_processes": end["max_tracked"],
         "background_processes": background,
         "samples": end["samples"],
@@ -53,13 +54,15 @@ def main():
     parser.add_argument("--intervals", default="1000,100")
     parser.add_argument("--extra-idle", default="0,60")
     parser.add_argument("--background", default="0,1000")
+    parser.add_argument("--gpu", default="off")
     args = parser.parse_args()
 
     for interval_ms in [int(value) for value in args.intervals.split(",")]:
         for extra_idle in [int(value) for value in args.extra_idle.split(",")]:
             for background in [int(value) for value in args.background.split(",")]:
-                result = measure(args.agent, args.seconds, interval_ms, extra_idle, background)
-                print(json.dumps(result), flush=True)
+                for gpu in args.gpu.split(","):
+                    result = measure(args.agent, args.seconds, interval_ms, extra_idle, background, gpu)
+                    print(json.dumps(result), flush=True)
 
 
 if __name__ == "__main__":

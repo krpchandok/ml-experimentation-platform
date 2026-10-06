@@ -226,6 +226,37 @@ def test_gpu_features_use_devices_running_the_tree(tmp_path):
     assert summary["verdict"]["primary"] == "main_process_bound"
 
 
+def test_run_missing_from_gpu_process_list_is_gpu_not_used(tmp_path):
+    run = SyntheticRun(tmp_path)
+    gpu = gpu_row(4.0, procs=[{"pid": 9999, "device": 0, "mem_used_mb": 700.0}])
+    run.steady(0, 20, {MAIN_PID: {"cpu_pct": 650}}, gpu=gpu)
+    run.log_steps(0.5, 19.5, 0.5)
+    summary = analyze_run(run.write())
+    assert summary["verdict"]["primary"] == "gpu_not_used"
+    assert summary["gpu"]["tree_on_gpu"] is False
+    assert "model.to('cuda')" in summary["verdict"]["suggestions"][0]
+
+
+def test_no_process_info_never_claims_gpu_not_used(tmp_path):
+    run = SyntheticRun(tmp_path)
+    run.steady(0, 20, {MAIN_PID: {"cpu_pct": 99}}, gpu=gpu_row(4.0, procs=[], process_info=False))
+    run.log_steps(0.5, 19.5, 0.5)
+    summary = analyze_run(run.write())
+    assert summary["gpu"]["tree_on_gpu"] is None
+    assert "gpu_not_used" not in all_verdicts(summary)
+
+
+def test_unknown_per_process_gpu_memory_stays_unknown(tmp_path):
+    run = SyntheticRun(tmp_path)
+    gpu = gpu_row(95.0, procs=[{"pid": MAIN_PID, "device": 0, "mem_used_mb": None}])
+    run.steady(0, 20, {MAIN_PID: {"cpu_pct": 100}}, gpu=gpu)
+    run.log_steps(0.5, 19.5, 0.5)
+    summary = analyze_run(run.write())
+    assert summary["gpu"]["tree_on_gpu"] is True
+    assert summary["gpu"]["tree_memory_peak_mb"] is None
+    assert summary["verdict"]["primary"] == "healthy"
+
+
 def test_unavailable_gpu_marker_falls_back_to_cpu_rules(tmp_path):
     run = SyntheticRun(tmp_path)
     run.steady(0, 20, {MAIN_PID: {"cpu_pct": 99}}, gpu="unavailable")
@@ -272,6 +303,32 @@ def test_compute_bound_cpu_run_with_fast_pipeline_is_healthy():
 
 def test_multithreaded_main_without_logged_data_time_is_not_misclassified():
     assert rules.decide(cpu_features())["primary"] == "underutilized"
+
+
+def gpu_features(util):
+    return rules.GpuFeatures(device_count=1, util_mean_pct=util, util_p50_pct=util, process_info=True,
+                             tree_on_gpu=True)
+
+
+def test_gpu_in_the_gray_zone_with_logged_waiting_is_starved():
+    decision = rules.decide(cpu_features(worker_count=4, worker_cpu_mean_pct=100, main_cpu_mean_pct=74,
+                                         data_wait_fraction=0.40, gpu=gpu_features(57)))
+    assert decision["primary"] == "preprocessing_bound"
+    assert "only 57%" in decision["evidence"][1]
+
+
+def test_gpu_in_the_gray_zone_without_waiting_is_not_starved():
+    decision = rules.decide(cpu_features(worker_count=4, worker_cpu_mean_pct=100, main_cpu_mean_pct=74,
+                                         data_wait_fraction=0.05, gpu=gpu_features(57)))
+    assert decision["primary"] != "preprocessing_bound"
+
+
+def test_launch_bound_gpu_loop_is_main_process_bound_even_with_busy_workers():
+    decision = rules.decide(cpu_features(worker_count=8, worker_cpu_mean_pct=96, main_cpu_mean_pct=112,
+                                         data_wait_fraction=0.05, gpu=gpu_features(77)))
+    assert decision["primary"] == "main_process_bound"
+    assert "input pipeline kept up" in decision["evidence"][1]
+    assert ".item()" in decision["suggestions"][0]
 
 
 def test_summary_records_thresholds_and_is_written(tmp_path):

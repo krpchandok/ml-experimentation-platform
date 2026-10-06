@@ -23,6 +23,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLED_AGENT = REPO_ROOT / "agent" / "build" / "mlplat-agent"
 AGENT_STOP_TIMEOUT_S = 10
 LEFTOVER_GRACE_S = 3
+STOP_POLL_S = 0.25
+STOP_GRACE_S = 10
 META_SCHEMA = 1
 FORWARDED_SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
@@ -144,14 +146,15 @@ def terminate_leftovers(process_group):
     return True
 
 
-def start_agent(agent_path, pid, interval_ms, run):
+def start_agent(agent_path, pid, interval_ms, run, gpu="auto"):
     if agent_path is None:
         warn("resource agent not found; set MLPLAT_AGENT or build agent/; continuing without resource data")
         return None, {"available": False, "error": "agent binary not found"}
     log = open(run.agent_log_path, "wb")
     try:
         process = subprocess.Popen(
-            [str(agent_path), "--pid", str(pid), "--interval-ms", str(interval_ms), "--out", str(run.resources_path)],
+            [str(agent_path), "--pid", str(pid), "--interval-ms", str(interval_ms), "--out", str(run.resources_path),
+             "--gpu", gpu],
             stdin=subprocess.DEVNULL, stdout=log, stderr=log, **own_process_group(),
         )
     except OSError as error:
@@ -178,14 +181,46 @@ def stop_agent(process, info):
         info["error"] = "agent did not stop and was killed"
 
 
-def status_for(exit_code, interrupted):
+def status_for(exit_code, interrupted, stop_reason=None):
     if interrupted:
         return "interrupted"
+    if stop_reason is not None:
+        return "profiled"
     return "completed" if exit_code == 0 else "failed"
 
 
-def launch(name, command, config_path=None, runs_dir=None, agent_path=None, interval_ms=1000, mlflow_mode="auto",
-           analyze=True):
+def wait_for_training(process, stop_when):
+    stop_reason = None
+    escalation = []
+    while True:
+        try:
+            return process.wait(timeout=STOP_POLL_S), stop_reason
+        except subprocess.TimeoutExpired:
+            pass
+        now = time.monotonic()
+        if stop_reason is None and stop_when is not None:
+            stop_reason = stop_when()
+            if stop_reason is not None:
+                print(f"mlplat: stopping training: {stop_reason}", file=sys.stderr, flush=True)
+                send_signal(process.pid, signal.SIGINT)
+                escalation = [(now + STOP_GRACE_S, signal.SIGTERM), (now + 2 * STOP_GRACE_S, signal.SIGKILL)]
+        while escalation and now >= escalation[0][0]:
+            send_signal(process.pid, escalation.pop(0)[1], group=True)
+
+
+def send_signal(pid, signum, group=False):
+    try:
+        (os.killpg if group else os.kill)(pid, signum)
+    except ProcessLookupError:
+        pass
+
+
+def launch(name, command, **options):
+    return launch_run(name, command, **options)[1]["exit_code"]
+
+
+def launch_run(name, command, config_path=None, runs_dir=None, agent_path=None, interval_ms=1000, mlflow_mode="auto",
+               analyze=True, gpu="auto", stop_when=None, extra_meta=None):
     config = load_config(config_path) if config_path else None
     digest, digest_source = config_hash(config, command)
     run = RunStore(runs_dir).create()
@@ -212,6 +247,7 @@ def launch(name, command, config_path=None, runs_dir=None, agent_path=None, inte
         "start_mono": time.monotonic(),
         "end_time": None,
         "exit_code": None,
+        **(extra_meta or {}),
     }
     run.write_meta(meta)
     print(f"mlplat: run {run.run_id} ({name}) -> {run.path}", file=sys.stderr, flush=True)
@@ -223,24 +259,30 @@ def launch(name, command, config_path=None, runs_dir=None, agent_path=None, inte
         except OSError as error:
             meta.update(status="failed", exit_code=127 if isinstance(error, FileNotFoundError) else 126,
                         error=str(error), agent={"available": False, "error": "training command did not start"})
-            return finish(run, meta, mlflow_mode, analyze)
+            finish(run, meta, mlflow_mode, analyze)
+            return run, meta
 
         forwarder.attach(process.pid)
         meta["pid"] = process.pid
-        agent_process, meta["agent"] = start_agent(find_agent(agent_path), process.pid, interval_ms, run)
+        agent_process, meta["agent"] = start_agent(find_agent(agent_path), process.pid, interval_ms, run, gpu)
         run.write_meta(meta)
 
         tee = OutputTee(process.stdout, run.output_path)
         tee.start()
-        returncode = process.wait()
+        returncode, stop_reason = wait_for_training(process, (lambda: stop_when(run)) if stop_when else None)
         meta["leftover_processes_terminated"] = terminate_leftovers(process.pid)
         tee.join()
         stop_agent(agent_process, meta["agent"])
 
     exit_code = exit_code_from(returncode)
-    meta.update(status=status_for(exit_code, forwarder.interrupted), exit_code=exit_code,
+    status = status_for(exit_code, forwarder.interrupted, stop_reason)
+    meta.update(status=status, exit_code=0 if status == "profiled" else exit_code,
+                training_exit_code=exit_code,
                 signals_received=[signal.Signals(signum).name for signum in forwarder.received])
-    return finish(run, meta, mlflow_mode, analyze)
+    if stop_reason is not None:
+        meta["stop_reason"] = stop_reason
+    finish(run, meta, mlflow_mode, analyze)
+    return run, meta
 
 
 def analyze_safely(run):

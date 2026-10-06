@@ -4,9 +4,19 @@
 #include <string>
 #include <vector>
 
+#include "nvml.h"
 #include "sampler.h"
 
 namespace mlplat {
+
+struct GpuHeader {
+    bool available = false;
+    std::string reason;
+    std::string driver_version;
+    std::string library;
+    std::vector<GpuDeviceInfo> devices;
+    double init_ms = 0;
+};
 
 struct HeaderInfo {
     int root_pid = 0;
@@ -20,6 +30,7 @@ struct HeaderInfo {
     std::string proc_root;
     double t_mono = 0;
     double t_wall = 0;
+    GpuHeader gpu;
 };
 
 struct AgentUsage {
@@ -34,6 +45,7 @@ struct EndInfo {
     double t_mono = 0;
     double t_wall = 0;
     double agent_cpu_seconds = 0;
+    double startup_cpu_seconds = 0;
     double agent_wall_seconds = 0;
     double sample_us_mean = 0;
     double sample_us_max = 0;
@@ -44,7 +56,7 @@ struct EndInfo {
 std::string format_header(const HeaderInfo& header);
 std::string format_event(const ProcessEvent& event, double t_mono);
 std::string format_sample(const Sample& sample, uint64_t seq, double t_mono, double t_wall,
-                          const AgentUsage& agent);
+                          const AgentUsage& agent, const std::optional<GpuSample>& gpu = std::nullopt);
 std::string format_end(const EndInfo& end);
 
 }
