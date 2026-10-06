@@ -147,6 +147,7 @@ WHAT_TO_TRY = "What to try"
 ANIMATION_NOTE = "Slowed down {factor} times so you can see it."
 REDUCED_MOTION_NOTE = "Animation is off because your device asks for reduced motion."
 ESTIMATE_LABEL = "Estimate"
+NOT_ESTIMATED = "Not part of this estimate"
 
 COMPARE_INTRO = "Pick a bake from before a change and one from after. Here is what changed."
 COMPARE_BEFORE = "Before"
@@ -190,6 +191,73 @@ GLOSSARY = {
     "kitchen": "A training target: a place you can run training, like your own GPU, Colab, Kaggle or a cloud GPU.",
     "pantry": "Storage: where the training data lives before it is prepared.",
 }
+
+DEMO_PAGE_TITLES = {"start": "Start here", "tour": "1-minute tour", "how": "How it works"}
+DEMO_ONE_LINER = ("mlplat profiles a machine-learning training run at the operating-system level, explains in plain "
+                  "language why the GPU sat idle, and predicts where the full training run would be fastest and cheapest.")
+DEMO_NOTE = ("Every run here is a real recording from an {gpu}. Cloud prices and the other kitchens use placeholder "
+             "estimates, not quotes.")
+DEMO_TOUR_BUTTON = "Take the 1-minute tour"
+DEMO_HOW_BUTTON = "How it works"
+DEMO_HEADLINE_KICKER = "One real fix, measured"
+DEMO_HEADLINE_SPEED = "Training steps per second"
+DEMO_HEADLINE_STEP = "Time per step"
+DEMO_HEADLINE_GPU = "GPU busy"
+DEMO_HEADLINE_SUB = "Same model, same {gpu}. The only change: {before} → {after} data-loader workers."
+DEMO_LINKS = {"github": "GitHub", "resume": "Resume", "linkedin": "LinkedIn"}
+DEMO_MISSING = "Demo runs are missing from this deployment: {names}. Check dashboard/demo.yaml."
+DEMO_BACK = "Back"
+DEMO_NEXT = "Next"
+DEMO_FINISH = "Explore the dashboard"
+DEMO_STEP_OF = "Step {step} of {total}"
+DEMO_TOUR = [
+    ("The problem", "Your GPU is the expensive part, so it should never wait. In this real run it sat idle for "
+                    "{idle} of {span}, waiting for data."),
+    ("The diagnosis", "mlplat watched every process. The one data-loader worker was {worker_busy} busy while the GPU "
+                      "was busy only {gpu_busy}. The slowest step is the bakers, not the oven."),
+    ("The fix", "Adding data-loader workers ({before_workers} → {after_workers}) and changing nothing else made "
+                "training {speedup:.1f}× faster."),
+    ("Where to train", "For the full {total_steps} steps, mlplat compares kitchens and tells you to fix the pipeline "
+                       "first: a faster GPU alone would not help."),
+    ("The bakery sandbox", "Try it yourself: switch between the run as it is and the fixed version, and watch the oven. "
+                           "These numbers are predictions from the same model mlplat plan uses."),
+]
+DEMO_MORE_TWEAK = ("One more tweak, checking on the GPU every 10 steps instead of every step, reached {rate:.0f} steps "
+                   "per second with the GPU busy {gpu_busy}.")
+DEMO_SANDBOX_CHOICES = {"as_is": "As it is", "fixed": "Fixed"}
+DEMO_SANDBOX_RESULT = "{label}: {workers} → about {step} per tray, the oven busy {busy} of the time. Estimate."
+DEMO_HOW_INTRO = ("Four small parts work together. Each one does one job and writes plain files the next one reads.")
+DEMO_HOW_PARTS = [
+    ("Resource agent", "C++17",
+     "A tiny program that watches the training run once a second: CPU, memory, disk and GPU for every process."),
+    ("Launcher", "Python",
+     "Starts your training command, starts the agent next to it, and stops both cleanly."),
+    ("Analyzer and planner", "Python",
+     "Turns the raw samples into a verdict with evidence, and predicts time and cost on other machines."),
+    ("Dashboard", "Streamlit",
+     "What you are looking at: the story of each run in plain language, with the technical details one click away."),
+]
+DEMO_HOW_TECH = [
+    ("procfs", "Linux keeps a live report card for every running program under /proc. The agent reads it directly, "
+               "so it needs no special permissions and no changes to your training code."),
+    ("pidfd", "A Linux feature that lets the agent get a signal the instant training ends, instead of checking "
+              "over and over, so the last measurement is never missed."),
+    ("NVML via dlopen", "NVIDIA's monitoring library is loaded only when the program starts. On machines without an "
+                        "NVIDIA GPU the same program still runs and simply records that there is no GPU."),
+]
+DEMO_HOW_OVERHEAD = "Measured cost of watching"
+DEMO_HOW_OVERHEAD_BODY = ("Across the {count} demo runs the agent used {cpu_mean} of one CPU core on average "
+                          "(at most {cpu_max}), took {sample_ms} per measurement and needed {rss} of memory.")
+DEMO_HOW_ACCURACY = "How accurate are the predictions?"
+DEMO_HOW_ACCURACY_BODY = ("From one short profiling run with 1 worker, mlplat predicted the step time for other worker "
+                          "counts. Here is how those predictions compare with real runs on the same machine.")
+DEMO_HOW_ACCURACY_NOTE = ("These are checks on the same machine. Accuracy on other machines depends on the catalog "
+                          "values, which are still placeholders.")
+DEMO_HOW_CODE = "Read the code on GitHub"
+DEMO_ACCURACY_VALUE = "{error:.0f}% off"
+DEMO_ACCURACY_SUB = "Predicted {predicted:.1f} ms per step, measured {actual:.1f} ms: {direction}."
+DEMO_ACCURACY_SLOW = "the prediction was too slow (cautious)"
+DEMO_ACCURACY_FAST = "the prediction was too fast (optimistic)"
 
 TECH_TERMS = {
     "bakers": "DataLoader workers (child processes, CPU from /proc/<pid>/stat)",

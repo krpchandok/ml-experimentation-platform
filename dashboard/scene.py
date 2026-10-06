@@ -106,7 +106,7 @@ def static_scene(numbers):
     pantry = "".join(image(name, name.replace("_", " "), "pantry-art") for name in ("flour_sack", "egg_basket", "milk_bottle"))
     oven = f'<div class="oven-static{glow}">{image(oven_name, oven_alt, "oven-art")}</div>'
     goods = "".join(image(art.FOOD[index], art.FOOD[index][3:], "food-art") for index in (0, 7, 8))
-    read = "-" if numbers.read_mib_s is None else f"{numbers.read_mib_s:.1f} MB read per second"
+    read = wording.NOT_ESTIMATED if numbers.read_mib_s is None else f"{numbers.read_mib_s:.1f} MB read per second"
     busy = "-" if numbers.oven_busy is None else f"Busy {min(numbers.oven_busy, 1.0) * 100:.0f}% of the time"
     rate = "-" if not numbers.steps_per_s else f"{numbers.steps_per_s:.1f} trays per second"
     bakers = wording.bakers(numbers.workers).capitalize()
@@ -214,7 +214,23 @@ h3 {{ font-family: Fredoka, Nunito, sans-serif; font-weight: 600; font-size: 1.0
   .lane, .notes.motion {{ display: none; }}
   .reduced {{ display: block; margin: 10px 4px 0; font-size: .85rem; color: var(--muted); }}
 }}
-@media (max-width: 720px) {{ .pipeline {{ grid-template-columns: 1fr; }} .arrow {{ transform: rotate(90deg); }} }}
+@media (max-width: 720px) {{ .pipeline {{ grid-template-columns: 1fr; }} .arrow {{ transform: rotate(90deg); }}
+  .stage {{ min-height: 0; }} }}
+@media (max-width: 520px) {{
+  .lane {{ height: 190px; }}
+  .lane-bakers {{ left: 8px; }}
+  .lane-station {{ width: 36px; height: 36px; }}
+  .lane-oven {{ left: auto; right: 92px; transform: none; width: 104px; height: 104px; }}
+  .oven-layer .oven-art {{ width: 104px; height: 104px; }}
+  .lane-oven .missing {{ width: 96px; height: 96px; }}
+  .lane-out {{ right: 4px; width: 84px; }}
+  .out-stack {{ height: 54px; }}
+  .popped {{ width: 32px; height: 32px; margin-left: -16px; }}
+  .tally {{ font-size: .75rem; }}
+  .traveller {{ left: 44px; width: 48px; height: 48px; }}
+  .traveller .peel {{ width: 48px; height: 48px; }}
+  .traveller .dough {{ left: 3px; top: 16px; width: 24px; height: 24px; }}
+}}
 </style></head><body>
 {static_scene(numbers)}
 <p class="caption">{html.escape(label + numbers.slowest_label)}.</p>
@@ -232,8 +248,9 @@ h3 {{ font-family: Fredoka, Nunito, sans-serif; font-weight: 600; font-size: 1.0
   const stack = lane.querySelector('.out-stack');
   const count = lane.querySelector('.count');
   const peelHtml = lane.querySelector('#peel-tpl').innerHTML;
-  const laneWidth = lane.clientWidth;
-  const doorX = laneWidth * 0.58 - 75 - 70 - 64;
+  const traveller = lane.clientWidth < 520 ? 48 : 64;
+  const startX = lane.clientWidth < 520 ? 44 : 70;
+  const doorX = oven.offsetLeft - startX - traveller - 4;
   const queue = [];
   let baking = false, baked = 0, foodIndex = 0, blocked = false;
   lane.style.setProperty('--travel', cfg.travel + 'ms');
@@ -244,7 +261,7 @@ h3 {{ font-family: Fredoka, Nunito, sans-serif; font-weight: 600; font-size: 1.0
     label.textContent = text;
   }};
   setOven('open', 'Waiting for dough');
-  const slotX = (slot) => doorX - slot * 54;
+  const slotX = (slot) => doorX - slot * (traveller - 10);
   const layoutQueue = () => queue.forEach((tray, slot) => {{ tray.style.transform = `translateX(${{slotX(slot)}}px)`; }});
   const spawn = () => {{
     if (queue.length >= cfg.maxQueue) {{ blocked = true; return; }}

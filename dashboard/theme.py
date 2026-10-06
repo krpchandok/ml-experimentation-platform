@@ -175,7 +175,37 @@ def css():
 .bh-empty .art {{ width: 120px; height: 120px; }}
 .bh-runs .bh-card {{ display: flex; flex-direction: column; gap: 8px; }}
 .bh-food {{ width: 36px; height: 36px; }}
-@media (max-width: 700px) {{ .bh-fix-cols {{ grid-template-columns: 1fr; }} .bh-header .bh-mitt {{ display: none; }} }}
+.bh-demo-note {{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin: 6px 0 2px;
+  border-radius: 16px; background: var(--bh-info-bg); border: 1px solid var(--bh-border); color: var(--bh-text); font-size: .9rem; }}
+.bh-progress {{ margin-top: 10px; }}
+.bh-dot {{ width: 28px; height: 6px; border-radius: 99px; background: var(--bh-track); }}
+.bh-dot.on {{ background: var(--bh-gradient); }}
+.bh-arch {{ display: flex; align-items: stretch; gap: 8px; margin: 14px 0; flex-wrap: nowrap; }}
+.bh-arch-box {{ flex: 1; background: var(--bh-surface); border: 1px solid var(--bh-border); border-radius: 18px;
+  padding: 14px 16px; box-shadow: var(--bh-shadow); text-align: center; }}
+.bh-arch-arrow {{ display: flex; align-items: center; color: var(--bh-muted); }}
+.bh-author {{ display: flex; align-items: center; gap: 14px; margin: 18px 0 10px; }}
+@media (max-width: 700px) {{
+  .bh-fix-cols {{ grid-template-columns: 1fr; }}
+  .bh-header .bh-mitt {{ display: none; }}
+  .block-container {{ padding: 1rem .9rem 2rem; }}
+  .bh-header {{ padding: 12px 14px; gap: 12px; border-radius: 18px; }}
+  .bh-header .art {{ width: 44px; height: 44px; }}
+  .bh-header .bh-brand {{ font-size: 1.3rem; }}
+  .bh-header .bh-tagline {{ font-size: .88rem; }}
+  .bh-page-title {{ font-size: 1.55rem; }}
+  .bh-lead {{ font-size: 1rem; }}
+  .bh-summary {{ font-size: 1.2rem; }}
+  .bh-big {{ font-size: 1.75rem; }}
+  .bh-ba .bh-big {{ font-size: 1.6rem; }}
+  .bh-grid, .bh-ba {{ grid-template-columns: 1fr; }}
+  .bh-grid-4 {{ grid-template-columns: 1fr 1fr; }}
+  .bh-card {{ padding: 16px; border-radius: 18px; }}
+  .bh-fix {{ padding: 16px; }}
+  .bh-arch {{ flex-direction: column; }}
+  .bh-arch-arrow {{ justify-content: center; transform: rotate(90deg); }}
+  .bh-tip:hover::after, .bh-tip:focus::after {{ width: 200px; left: auto; right: -8px; transform: none; }}
+}}
 </style>
 """
 

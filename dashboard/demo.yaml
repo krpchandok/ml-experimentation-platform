@@ -1,0 +1,13 @@
+author: Built by Kirpa Chandok, CS @ Waterloo
+links:
+  github: https://github.com/YOUR-GITHUB/ml-experimentation-platform
+  resume: https://YOUR-RESUME-LINK
+  linkedin: https://www.linkedin.com/in/YOUR-LINKEDIN
+runs:
+  diagnosis: plan-gpu-workers-1
+  before: demo-gpu-workers-1
+  after: demo-gpu-workers-12
+  after_more: demo-gpu-workers-12-log10
+  validation:
+    - check-fixed-6-workers
+    - demo-gpu-workers-12
