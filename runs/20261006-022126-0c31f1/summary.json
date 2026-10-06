@@ -1,0 +1,171 @@
+{
+  "config_hash": "02d4e3e34e5ae5e8",
+  "data_quality": {
+    "agent_available": true,
+    "agent_end_reason": "root_exited",
+    "delay_accounting": false,
+    "notes": [
+      "No GPU data: verdict rules used CPU-only signals."
+    ],
+    "samples": 39,
+    "unavailable": [
+      "blkio_delay"
+    ]
+  },
+  "exit_code": 0,
+  "features": {
+    "data_wait_fraction": 0.6850716652778771,
+    "exit_code": 0,
+    "gpu": null,
+    "main_blkio_wait_pct": null,
+    "main_cpu_mean_pct": 194.26649659354163,
+    "main_read_bytes_per_s": 0.0,
+    "majflt_early_per_s": 0.0,
+    "majflt_late_per_s": 0.0,
+    "mem_available_min_fraction": 0.9028614396807946,
+    "memory_limit_kb": 16288444.0,
+    "memory_limit_source": "host",
+    "oom_kills": null,
+    "rss_peak_kb": 883272,
+    "system_iowait_pct": 0.000990708397954682,
+    "tree_cores_mean": 1.9426649659354163,
+    "usable_cores": 28.0,
+    "usable_cores_source": "affinity",
+    "window_samples": 36,
+    "window_seconds": 36.0433,
+    "worker_blkio_wait_pct": null,
+    "worker_count": 0,
+    "worker_cpu_mean_pct": null,
+    "worker_cpu_min_pct": null,
+    "worker_read_bytes_per_s": null
+  },
+  "generated_at": 1791253323.7612474,
+  "gpu": null,
+  "name": "demo-cpu-workers-0",
+  "processes": [
+    {
+      "blkio_wait_mean_pct": null,
+      "cmdline": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cpu --threads 4 --steps 150 --preprocess-cost 40 --workers 0",
+      "comm": "python",
+      "cpu_mean_pct": 194.26649659354163,
+      "cpu_p95_pct": 212.6259,
+      "cpu_seconds": 75.98,
+      "exited": true,
+      "first_seen_mono": 13267.8457,
+      "last_seen_mono": 13305.9,
+      "lifetime_s": 38.68,
+      "majflt_total": 98.00187346000001,
+      "peak_rss_mb": 862.5703125,
+      "pid": 23413,
+      "ppid": 23406,
+      "read_bytes": 5082368,
+      "read_bytes_per_s_mean": 0.0,
+      "role": "main",
+      "threads_max": 36,
+      "window_samples": 36,
+      "write_bytes": 36864
+    }
+  ],
+  "roles": {
+    "helpers": {
+      "count": 0,
+      "cpu_seconds": 0
+    },
+    "main": {
+      "cpu_mean_pct": 194.26649659354163,
+      "cpu_seconds": 75.98,
+      "peak_rss_mb": 862.5703125,
+      "pid": 23413,
+      "threads_max": 36
+    },
+    "workers": {
+      "count_median": 0,
+      "count_total": 0,
+      "cpu_max_pct": null,
+      "cpu_mean_pct": null,
+      "cpu_min_pct": null,
+      "cpu_seconds": 0
+    }
+  },
+  "run_id": "20261006-022126-0c31f1",
+  "schema": 1,
+  "status": "completed",
+  "totals": {
+    "avg_cores": 1.9643175689825,
+    "avg_cores_window": 1.9426649659354163,
+    "cpu_seconds": 75.98,
+    "cpu_seconds_per_step": 0.4699332628637584,
+    "cpu_seconds_window": 70.0200561667,
+    "duration_s": 36.973,
+    "final_metrics": {
+      "accuracy": 0.625,
+      "compute_time": 0.07460054999864951,
+      "data_time": 0.16739299499931803,
+      "loss": 0.8243335485458374
+    },
+    "peak_cores": 2.8616539999999997,
+    "peak_rss_mb": 862.5703125,
+    "read_bytes": 5082368,
+    "sampled_s": 38.6801,
+    "step_time_mean_s": 0.2455718023020198,
+    "step_time_median_s": 0.24468375600008585,
+    "step_time_p90_s": 0.25916757000049984,
+    "steps": 150,
+    "steps_in_window": 149,
+    "steps_per_sec": 4.072128764890264,
+    "write_bytes": 36864
+  },
+  "verdict": {
+    "evidence": [
+      "The main training process was busy (194% of a core on average) and also produced every batch itself.",
+      "There were no data-loader worker processes, so loading and preprocessing ran in the main process, serialized with the training step.",
+      "The training loop reported spending 69% of its time waiting for the next batch (logged data_time)."
+    ],
+    "primary": "main_process_bound",
+    "rules_version": 1,
+    "secondary": [],
+    "severity": "bottleneck",
+    "signals": {
+      "gpu_util_mean_pct": null,
+      "main_cpu_mean_pct": 194.26649659354163,
+      "worker_count": 0,
+      "worker_cpu_mean_pct": null
+    },
+    "suggestions": [
+      "Set DataLoader num_workers > 0 so preprocessing runs in parallel with the training step.",
+      "Profile the loop (py-spy, torch.profiler) to separate data time from step time."
+    ],
+    "thresholds": {
+      "DATA_WAIT_HIGH_FRACTION": 0.3,
+      "DATA_WAIT_LOW_FRACTION": 0.1,
+      "GPU_BUSY_PCT": 80.0,
+      "GPU_STARVED_PCT": 50.0,
+      "HEALTHY_CPU_CORE_FRACTION": 0.7,
+      "IO_BLKIO_WAIT_PCT": 20.0,
+      "IO_LOW_CPU_PCT": 50.0,
+      "IO_READ_HIGH_BYTES_PER_S": 52428800,
+      "IO_SYSTEM_IOWAIT_PCT": 10.0,
+      "MAIN_SATURATED_PCT": 85.0,
+      "MAIN_SINGLE_CORE_CEILING_PCT": 150.0,
+      "MAIN_WAITING_PCT": 60.0,
+      "MAJFLT_GROWTH_FACTOR": 2.0,
+      "MAJFLT_HIGH_PER_S": 50.0,
+      "MEMORY_AVAILABLE_LOW_FRACTION": 0.05,
+      "MEMORY_CRITICAL_FRACTION": 0.97,
+      "MEMORY_NEAR_LIMIT_FRACTION": 0.9,
+      "MIN_WINDOW_SAMPLES": 3,
+      "OOM_EXIT_CODE": 137,
+      "WORKER_IDLE_PCT": 30.0,
+      "WORKER_SATURATED_PCT": 80.0
+    },
+    "title": "Main-process-bound: the training loop's Python thread is the bottleneck"
+  },
+  "window": {
+    "end_mono": 13306.161879404,
+    "samples": 36,
+    "seconds": 36.0433,
+    "source": "metrics",
+    "start_mono": 13269.571680861,
+    "warmup_excluded_s": 1.8067495399991458
+  }
+}

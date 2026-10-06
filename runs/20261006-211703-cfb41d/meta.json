@@ -1,0 +1,69 @@
+{
+  "agent": {
+    "available": true,
+    "exit_code": 0,
+    "interval_ms": 1000,
+    "path": "/home/kirpa/projects/ml-experimentation-platform/agent/build/mlplat-agent",
+    "pid": 47839
+  },
+  "command": [
+    "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python",
+    "examples/train_image_classifier.py",
+    "--device",
+    "cuda",
+    "--steps",
+    "1500",
+    "--preprocess-cost",
+    "6",
+    "--workers",
+    "12"
+  ],
+  "command_line": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cuda --steps 1500 --preprocess-cost 6 --workers 12",
+  "config": null,
+  "config_hash": "7e466a449a7254fe",
+  "config_hash_source": "command",
+  "config_path": null,
+  "cwd": "/home/kirpa/projects/ml-experimentation-platform",
+  "duration_s": 12.392,
+  "end_mono": 17857.269222787,
+  "end_time": "2026-10-06T21:17:15.640863+00:00",
+  "end_wall": 1791321435.640863,
+  "exit_code": 0,
+  "git": {
+    "branch": "main",
+    "commit": "264ca0a919d0d9c5ae306452bc358ad1a3f2cebf",
+    "dirty": true,
+    "root": "/home/kirpa/projects/ml-experimentation-platform"
+  },
+  "host": {
+    "arch": "x86_64",
+    "cgroup": "/init.scope",
+    "cpu_model": "Intel(R) Core(TM) i7-14700F",
+    "gpus": [
+      {
+        "driver": "591.86",
+        "index": 0,
+        "memory_total_mib": 8188,
+        "name": "NVIDIA GeForce RTX 4060"
+      }
+    ],
+    "hostname": "Kirpa",
+    "is_wsl": true,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "logical_cpus": 28,
+    "mem_total_kb": 16288444,
+    "os": "Ubuntu 24.04.4 LTS",
+    "python": "3.12.3",
+    "usable_cpus": 28
+  },
+  "leftover_processes_terminated": false,
+  "name": "demo-gpu-workers-12",
+  "pid": 47811,
+  "run_id": "20261006-211703-cfb41d",
+  "schema": 1,
+  "signals_received": [],
+  "start_mono": 17844.922411265,
+  "start_time": "2026-10-06T21:17:03.248382+00:00",
+  "start_wall": 1791321423.2483816,
+  "status": "completed"
+}

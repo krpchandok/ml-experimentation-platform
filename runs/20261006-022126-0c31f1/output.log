@@ -1,0 +1,5 @@
+settings {'workers': 0, 'batch_size': 64, 'steps': 150, 'image_size': 64, 'num_classes': 10, 'preprocess_cost': 40, 'device': 'cpu', 'threads': 4, 'lr': 0.05, 'seed': 0, 'slowdown_ms': 0.0, 'dataset_size': 50000} device cpu torch threads 4
+step 50 loss 2.272 acc 0.094 4.1 steps/s
+step 100 loss 1.543 acc 0.406 4.1 steps/s
+step 150 loss 0.824 acc 0.625 4.1 steps/s
+done: 150 steps in 36.9s

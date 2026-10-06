@@ -1,0 +1,216 @@
+{
+  "config_hash": "ef84114b37ec1dbf",
+  "data_quality": {
+    "agent_available": true,
+    "agent_end_reason": "root_exited",
+    "delay_accounting": false,
+    "notes": [],
+    "samples": 58,
+    "unavailable": [
+      "blkio_delay"
+    ]
+  },
+  "exit_code": 0,
+  "features": {
+    "data_wait_fraction": 0.6706647086706095,
+    "exit_code": 0,
+    "gpu": {
+      "device_count": 1,
+      "mem_util_mean_pct": 16.759394545454544,
+      "memory_total_mb": 8188,
+      "memory_used_peak_mb": 1696.9688,
+      "power_mean_w": null,
+      "process_info": true,
+      "tree_memory_peak_mb": null,
+      "tree_on_gpu": true,
+      "util_mean_pct": 32.564243636363635,
+      "util_p50_pct": 34.8,
+      "util_source": "samples"
+    },
+    "main_blkio_wait_pct": null,
+    "main_cpu_mean_pct": 37.59992513386388,
+    "main_read_bytes_per_s": 0.0,
+    "majflt_early_per_s": 0.0,
+    "majflt_late_per_s": 0.0,
+    "mem_available_min_fraction": 0.8791341886309091,
+    "memory_limit_kb": 16288444.0,
+    "memory_limit_source": "host",
+    "oom_kills": null,
+    "rss_peak_kb": 1771976,
+    "system_iowait_pct": 0.001297989450889911,
+    "tree_cores_mean": 1.386723287945978,
+    "usable_cores": 28.0,
+    "usable_cores_source": "affinity",
+    "window_samples": 55,
+    "window_seconds": 54.9999,
+    "worker_blkio_wait_pct": null,
+    "worker_count": 1,
+    "worker_cpu_mean_pct": 101.07240366327939,
+    "worker_cpu_min_pct": 101.07240366327939,
+    "worker_read_bytes_per_s": 0.0
+  },
+  "generated_at": 1791321423.203144,
+  "gpu": {
+    "device_count": 1,
+    "mem_util_mean_pct": 16.759394545454544,
+    "memory_total_mb": 8188,
+    "memory_used_peak_mb": 1696.9688,
+    "power_mean_w": null,
+    "process_info": true,
+    "tree_memory_peak_mb": null,
+    "tree_on_gpu": true,
+    "util_mean_pct": 32.564243636363635,
+    "util_p50_pct": 34.8,
+    "util_source": "samples"
+  },
+  "name": "demo-gpu-workers-1",
+  "processes": [
+    {
+      "blkio_wait_mean_pct": null,
+      "cmdline": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cuda --steps 1500 --preprocess-cost 6 --workers 1",
+      "comm": "python",
+      "cpu_mean_pct": 37.59992513386388,
+      "cpu_p95_pct": 41.9904,
+      "cpu_seconds": 26.03,
+      "exited": true,
+      "first_seen_mono": 17787.1517,
+      "last_seen_mono": 17844.1536,
+      "lifetime_s": 57.614,
+      "majflt_total": 128.00351386,
+      "peak_rss_mb": 1329.5078125,
+      "pid": 47741,
+      "ppid": 47734,
+      "read_bytes": 5083200,
+      "read_bytes_per_s_mean": 0.0,
+      "role": "main",
+      "threads_max": 31,
+      "window_samples": 55,
+      "write_bytes": 274432
+    },
+    {
+      "blkio_wait_mean_pct": null,
+      "cmdline": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cuda --steps 1500 --preprocess-cost 6 --workers 1",
+      "comm": "pt_data_worker",
+      "cpu_mean_pct": 101.07240366327939,
+      "cpu_p95_pct": 101.999,
+      "cpu_seconds": 55.95,
+      "exited": true,
+      "first_seen_mono": 17789.1535,
+      "last_seen_mono": 17844.1536,
+      "lifetime_s": 55.612,
+      "majflt_total": 0.0,
+      "peak_rss_mb": 400.9375,
+      "pid": 47777,
+      "ppid": 47741,
+      "read_bytes": 0,
+      "read_bytes_per_s_mean": 0.0,
+      "role": "worker",
+      "threads_max": 3,
+      "window_samples": 55,
+      "write_bytes": 0
+    }
+  ],
+  "roles": {
+    "helpers": {
+      "count": 0,
+      "cpu_seconds": 0
+    },
+    "main": {
+      "cpu_mean_pct": 37.59992513386388,
+      "cpu_seconds": 26.03,
+      "peak_rss_mb": 1329.5078125,
+      "pid": 47741,
+      "threads_max": 31
+    },
+    "workers": {
+      "count_median": 1,
+      "count_total": 1,
+      "cpu_max_pct": 101.07240366327939,
+      "cpu_mean_pct": 101.07240366327939,
+      "cpu_min_pct": 101.07240366327939,
+      "cpu_seconds": 55.95
+    }
+  },
+  "run_id": "20261006-211605-bcb2ba",
+  "schema": 1,
+  "status": "completed",
+  "totals": {
+    "avg_cores": 1.4229180407539836,
+    "avg_cores_window": 1.386723287945978,
+    "cpu_seconds": 81.98,
+    "cpu_seconds_per_step": 0.05088034834202802,
+    "cpu_seconds_window": 76.2696421647,
+    "duration_s": 57.767,
+    "final_metrics": {
+      "accuracy": 1.0,
+      "compute_time": 0.013435752000077628,
+      "data_time": 0.0245005590004439,
+      "loss": 5.466926086228341e-05
+    },
+    "peak_cores": 2.136655,
+    "peak_rss_mb": 1730.4453125,
+    "read_bytes": 5083200,
+    "sampled_s": 57.614,
+    "step_time_mean_s": 0.03696246991461184,
+    "step_time_median_s": 0.03676796500076307,
+    "step_time_p90_s": 0.038667487002385315,
+    "steps": 1500,
+    "steps_in_window": 1499,
+    "steps_per_sec": 27.054469095548306,
+    "write_bytes": 274432
+  },
+  "verdict": {
+    "evidence": [
+      "1 data-loader worker(s) each averaged 101% of a core (saturated at 80%).",
+      "Meanwhile GPU utilization averaged 33% (starved below 50%).",
+      "The training loop reported spending 67% of its time waiting for the next batch (logged data_time)."
+    ],
+    "primary": "preprocessing_bound",
+    "rules_version": 1,
+    "secondary": [],
+    "severity": "bottleneck",
+    "signals": {
+      "gpu_util_mean_pct": 32.564243636363635,
+      "main_cpu_mean_pct": 37.59992513386388,
+      "worker_count": 1,
+      "worker_cpu_mean_pct": 101.07240366327939
+    },
+    "suggestions": [
+      "Increase DataLoader num_workers (currently about 1; roughly 26 cores are unused).",
+      "Move augmentation to the GPU (for example torchvision.transforms.v2 on CUDA tensors) or precompute it.",
+      "Cache decoded or preprocessed samples so each epoch does less CPU work."
+    ],
+    "thresholds": {
+      "DATA_WAIT_HIGH_FRACTION": 0.3,
+      "DATA_WAIT_LOW_FRACTION": 0.1,
+      "GPU_BUSY_PCT": 80.0,
+      "GPU_STARVED_PCT": 50.0,
+      "HEALTHY_CPU_CORE_FRACTION": 0.7,
+      "IO_BLKIO_WAIT_PCT": 20.0,
+      "IO_LOW_CPU_PCT": 50.0,
+      "IO_READ_HIGH_BYTES_PER_S": 52428800,
+      "IO_SYSTEM_IOWAIT_PCT": 10.0,
+      "MAIN_SATURATED_PCT": 85.0,
+      "MAIN_SINGLE_CORE_CEILING_PCT": 150.0,
+      "MAIN_WAITING_PCT": 60.0,
+      "MAJFLT_GROWTH_FACTOR": 2.0,
+      "MAJFLT_HIGH_PER_S": 50.0,
+      "MEMORY_AVAILABLE_LOW_FRACTION": 0.05,
+      "MEMORY_CRITICAL_FRACTION": 0.97,
+      "MEMORY_NEAR_LIMIT_FRACTION": 0.9,
+      "MIN_WINDOW_SAMPLES": 3,
+      "OOM_EXIT_CODE": 137,
+      "WORKER_IDLE_PCT": 30.0,
+      "WORKER_SATURATED_PCT": 80.0
+    },
+    "title": "Preprocessing-bound: data-loader workers cannot keep up"
+  },
+  "window": {
+    "end_mono": 17844.326682423,
+    "samples": 55,
+    "seconds": 54.9999,
+    "source": "metrics",
+    "start_mono": 17788.919940021,
+    "warmup_excluded_s": 1.8724407239969878
+  }
+}

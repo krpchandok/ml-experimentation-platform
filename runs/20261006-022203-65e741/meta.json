@@ -1,0 +1,71 @@
+{
+  "agent": {
+    "available": true,
+    "exit_code": 0,
+    "interval_ms": 1000,
+    "path": "/home/kirpa/projects/ml-experimentation-platform/agent/build/mlplat-agent",
+    "pid": 23491
+  },
+  "command": [
+    "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python",
+    "examples/train_image_classifier.py",
+    "--device",
+    "cpu",
+    "--threads",
+    "4",
+    "--steps",
+    "150",
+    "--preprocess-cost",
+    "40",
+    "--workers",
+    "1"
+  ],
+  "command_line": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cpu --threads 4 --steps 150 --preprocess-cost 40 --workers 1",
+  "config": null,
+  "config_hash": "6558caa09f0f04a7",
+  "config_hash_source": "command",
+  "config_path": null,
+  "cwd": "/home/kirpa/projects/ml-experimentation-platform",
+  "duration_s": 26.412,
+  "end_mono": 13334.927256139,
+  "end_time": "2026-10-06T02:22:30.221147+00:00",
+  "end_wall": 1791253350.2211473,
+  "exit_code": 0,
+  "git": {
+    "branch": "main",
+    "commit": "b782078891b8845a3d99d883341dc17ea36cccbd",
+    "dirty": true,
+    "root": "/home/kirpa/projects/ml-experimentation-platform"
+  },
+  "host": {
+    "arch": "x86_64",
+    "cgroup": "/init.scope",
+    "cpu_model": "Intel(R) Core(TM) i7-14700F",
+    "gpus": [
+      {
+        "driver": "591.86",
+        "index": 0,
+        "memory_total_mib": 8188,
+        "name": "NVIDIA GeForce RTX 4060"
+      }
+    ],
+    "hostname": "Kirpa",
+    "is_wsl": true,
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "logical_cpus": 28,
+    "mem_total_kb": 16288444,
+    "os": "Ubuntu 24.04.4 LTS",
+    "python": "3.12.3",
+    "usable_cpus": 28
+  },
+  "leftover_processes_terminated": false,
+  "name": "demo-cpu-workers-1",
+  "pid": 23463,
+  "run_id": "20261006-022203-65e741",
+  "schema": 1,
+  "signals_received": [],
+  "start_mono": 13306.669285598,
+  "start_time": "2026-10-06T02:22:03.808706+00:00",
+  "start_wall": 1791253323.8087058,
+  "status": "completed"
+}

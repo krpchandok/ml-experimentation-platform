@@ -1,0 +1,28 @@
+settings {'workers': 1, 'batch_size': 64, 'steps': 100000, 'image_size': 64, 'num_classes': 10, 'preprocess_cost': 6, 'device': 'cuda', 'threads': 0, 'lr': 0.05, 'seed': 0, 'slowdown_ms': 0.0, 'log_every': 1, 'dataset_size': 50000} device cuda torch threads 14
+step 50 loss 1.559 acc 0.234 19.5 steps/s
+step 100 loss 0.599 acc 0.812 22.7 steps/s
+step 150 loss 0.485 acc 0.859 24.0 steps/s
+step 200 loss 0.003 acc 1.000 24.7 steps/s
+Traceback (most recent call last):
+  File "/home/kirpa/projects/ml-experimentation-platform/examples/train_image_classifier.py", line 157, in <module>
+    main()
+  File "/home/kirpa/projects/ml-experimentation-platform/examples/train_image_classifier.py", line 129, in main
+    for images, labels in loader:
+  File "/home/kirpa/projects/ml-experimentation-platform/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 725, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/kirpa/projects/ml-experimentation-platform/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1507, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/home/kirpa/projects/ml-experimentation-platform/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1456, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/kirpa/projects/ml-experimentation-platform/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1293, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/usr/lib/python3.12/threading.py", line 359, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -1,8 +1,8 @@
 author: Built by Kirpa Chandok, CS @ Waterloo
 links:
-  github: https://github.com/YOUR-GITHUB/ml-experimentation-platform
+  github: https://github.com/krpchandok/ml-experimentation-platform
   resume: https://YOUR-RESUME-LINK
-  linkedin: https://www.linkedin.com/in/YOUR-LINKEDIN
+  linkedin: https://www.linkedin.com/in/kirpa-chandok
 runs:
   diagnosis: plan-gpu-workers-1
   before: demo-gpu-workers-1

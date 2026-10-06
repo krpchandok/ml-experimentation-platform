@@ -1,0 +1,32 @@
+settings {'workers': 12, 'batch_size': 64, 'steps': 1500, 'image_size': 64, 'num_classes': 10, 'preprocess_cost': 6, 'device': 'cuda', 'threads': 0, 'lr': 0.05, 'seed': 0, 'slowdown_ms': 0.0, 'dataset_size': 50000} device cuda torch threads 14
+step 50 loss 1.559 acc 0.234 59.4 steps/s
+step 100 loss 0.599 acc 0.812 88.1 steps/s
+step 150 loss 0.624 acc 0.812 105.3 steps/s
+step 200 loss 0.023 acc 1.000 116.7 steps/s
+step 250 loss 0.005 acc 1.000 123.5 steps/s
+step 300 loss 0.002 acc 1.000 127.3 steps/s
+step 350 loss 0.000 acc 1.000 129.9 steps/s
+step 400 loss 0.000 acc 1.000 132.1 steps/s
+step 450 loss 0.322 acc 0.906 133.7 steps/s
+step 500 loss 1.637 acc 0.797 135.0 steps/s
+step 550 loss 0.003 acc 1.000 136.5 steps/s
+step 600 loss 0.001 acc 1.000 138.0 steps/s
+step 650 loss 0.000 acc 1.000 139.0 steps/s
+step 700 loss 0.000 acc 1.000 140.1 steps/s
+step 750 loss 0.000 acc 1.000 141.1 steps/s
+step 800 loss 0.000 acc 1.000 140.0 steps/s
+step 850 loss 0.000 acc 1.000 140.6 steps/s
+step 900 loss 0.000 acc 1.000 141.3 steps/s
+step 950 loss 0.000 acc 1.000 141.8 steps/s
+step 1000 loss 0.009 acc 1.000 142.3 steps/s
+step 1050 loss 0.000 acc 1.000 142.6 steps/s
+step 1100 loss 0.001 acc 1.000 143.0 steps/s
+step 1150 loss 0.038 acc 0.984 143.4 steps/s
+step 1200 loss 0.001 acc 1.000 143.8 steps/s
+step 1250 loss 0.002 acc 1.000 144.1 steps/s
+step 1300 loss 0.001 acc 1.000 144.5 steps/s
+step 1350 loss 0.000 acc 1.000 144.9 steps/s
+step 1400 loss 0.000 acc 1.000 145.3 steps/s
+step 1450 loss 0.000 acc 1.000 145.6 steps/s
+step 1500 loss 0.000 acc 1.000 146.0 steps/s
+done: 1500 steps in 10.3s

@@ -1,0 +1,194 @@
+{
+  "config_hash": "5530f844b8d1b24b",
+  "data_quality": {
+    "agent_available": true,
+    "agent_end_reason": "root_exited",
+    "delay_accounting": false,
+    "notes": [
+      "No GPU data: verdict rules used CPU-only signals."
+    ],
+    "samples": 54,
+    "unavailable": [
+      "blkio_delay"
+    ]
+  },
+  "exit_code": 0,
+  "features": {
+    "data_wait_fraction": 0.5840286851086621,
+    "exit_code": 0,
+    "gpu": null,
+    "main_blkio_wait_pct": null,
+    "main_cpu_mean_pct": 40.133033656960464,
+    "main_read_bytes_per_s": 0.0,
+    "majflt_early_per_s": 0.0,
+    "majflt_late_per_s": 0.0,
+    "mem_available_min_fraction": 0.8829403225992611,
+    "memory_limit_kb": 16288444.0,
+    "memory_limit_source": "host",
+    "oom_kills": null,
+    "rss_peak_kb": 1773704,
+    "system_iowait_pct": 0.001401028130465129,
+    "tree_cores_mean": 1.325741971344098,
+    "usable_cores": 28.0,
+    "usable_cores_source": "affinity",
+    "window_samples": 51,
+    "window_seconds": 51.0052,
+    "worker_blkio_wait_pct": null,
+    "worker_count": 1,
+    "worker_cpu_mean_pct": 94.2888537404736,
+    "worker_cpu_min_pct": 94.2888537404736,
+    "worker_read_bytes_per_s": 0.0
+  },
+  "generated_at": 1791253426.8758395,
+  "gpu": null,
+  "name": "demo-cuda-workers-1",
+  "processes": [
+    {
+      "blkio_wait_mean_pct": null,
+      "cmdline": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cuda --threads 4 --steps 300 --preprocess-cost 40 --workers 1",
+      "comm": "python",
+      "cpu_mean_pct": 40.133033656960464,
+      "cpu_p95_pct": 55.9865,
+      "cpu_seconds": 25.57,
+      "exited": true,
+      "first_seen_mono": 13361.9769,
+      "last_seen_mono": 13414.9839,
+      "lifetime_s": 53.366,
+      "majflt_total": 175.99200738000002,
+      "peak_rss_mb": 1334.40234375,
+      "pid": 23796,
+      "ppid": 23789,
+      "read_bytes": 5103680,
+      "read_bytes_per_s_mean": 0.0,
+      "role": "main",
+      "threads_max": 34,
+      "window_samples": 51,
+      "write_bytes": 61440
+    },
+    {
+      "blkio_wait_mean_pct": null,
+      "cmdline": "/home/kirpa/projects/ml-experimentation-platform/.venv/bin/python examples/train_image_classifier.py --device cuda --threads 4 --steps 300 --preprocess-cost 40 --workers 1",
+      "comm": "pt_data_worker",
+      "cpu_mean_pct": 94.2888537404736,
+      "cpu_p95_pct": 99.9762,
+      "cpu_seconds": 47.57,
+      "exited": true,
+      "first_seen_mono": 13363.9785,
+      "last_seen_mono": 13413.9844,
+      "lifetime_s": 51.005,
+      "majflt_total": 0.0,
+      "peak_rss_mb": 397.734375,
+      "pid": 23834,
+      "ppid": 23796,
+      "read_bytes": 0,
+      "read_bytes_per_s_mean": 0.0,
+      "role": "worker",
+      "threads_max": 6,
+      "window_samples": 50,
+      "write_bytes": 0
+    }
+  ],
+  "roles": {
+    "helpers": {
+      "count": 0,
+      "cpu_seconds": 0
+    },
+    "main": {
+      "cpu_mean_pct": 40.133033656960464,
+      "cpu_seconds": 25.57,
+      "peak_rss_mb": 1334.40234375,
+      "pid": 23796,
+      "threads_max": 34
+    },
+    "workers": {
+      "count_median": 1,
+      "count_total": 1,
+      "cpu_max_pct": 94.2888537404736,
+      "cpu_mean_pct": 94.2888537404736,
+      "cpu_min_pct": 94.2888537404736,
+      "cpu_seconds": 47.57
+    }
+  },
+  "run_id": "20261006-022255-bd5ed8",
+  "schema": 1,
+  "status": "completed",
+  "totals": {
+    "avg_cores": 1.3705304106344465,
+    "avg_cores_window": 1.325741971344098,
+    "cpu_seconds": 73.14,
+    "cpu_seconds_per_step": 0.22615295784882944,
+    "cpu_seconds_window": 67.6197343968,
+    "duration_s": 51.733,
+    "final_metrics": {
+      "accuracy": 0.671875,
+      "compute_time": 0.11111980399982713,
+      "data_time": 0.06212001100175257,
+      "loss": 0.7877933382987976
+    },
+    "peak_cores": 2.6722300000000003,
+    "peak_rss_mb": 1732.1328125,
+    "read_bytes": 5103680,
+    "sampled_s": 53.3662,
+    "step_time_mean_s": 0.16999930477257683,
+    "step_time_median_s": 0.17151848300090933,
+    "step_time_p90_s": 0.21174467100172478,
+    "steps": 300,
+    "steps_in_window": 299,
+    "steps_per_sec": 5.882376997587071,
+    "write_bytes": 61440
+  },
+  "verdict": {
+    "evidence": [
+      "1 data-loader worker(s) each averaged 94% of a core (saturated at 80%).",
+      "Meanwhile the main training process averaged 40% of a core, so it spent most of its time waiting for batches (waiting below 60%).",
+      "The training loop reported spending 58% of its time waiting for the next batch (logged data_time)."
+    ],
+    "primary": "preprocessing_bound",
+    "rules_version": 1,
+    "secondary": [],
+    "severity": "bottleneck",
+    "signals": {
+      "gpu_util_mean_pct": null,
+      "main_cpu_mean_pct": 40.133033656960464,
+      "worker_count": 1,
+      "worker_cpu_mean_pct": 94.2888537404736
+    },
+    "suggestions": [
+      "Increase DataLoader num_workers (currently about 1; roughly 26 cores are unused).",
+      "Move augmentation to the GPU (for example torchvision.transforms.v2 on CUDA tensors) or precompute it.",
+      "Cache decoded or preprocessed samples so each epoch does less CPU work."
+    ],
+    "thresholds": {
+      "DATA_WAIT_HIGH_FRACTION": 0.3,
+      "DATA_WAIT_LOW_FRACTION": 0.1,
+      "GPU_BUSY_PCT": 80.0,
+      "GPU_STARVED_PCT": 50.0,
+      "HEALTHY_CPU_CORE_FRACTION": 0.7,
+      "IO_BLKIO_WAIT_PCT": 20.0,
+      "IO_LOW_CPU_PCT": 50.0,
+      "IO_READ_HIGH_BYTES_PER_S": 52428800,
+      "IO_SYSTEM_IOWAIT_PCT": 10.0,
+      "MAIN_SATURATED_PCT": 85.0,
+      "MAIN_SINGLE_CORE_CEILING_PCT": 150.0,
+      "MAIN_WAITING_PCT": 60.0,
+      "MAJFLT_GROWTH_FACTOR": 2.0,
+      "MAJFLT_HIGH_PER_S": 50.0,
+      "MEMORY_AVAILABLE_LOW_FRACTION": 0.05,
+      "MEMORY_CRITICAL_FRACTION": 0.97,
+      "MEMORY_NEAR_LIMIT_FRACTION": 0.9,
+      "MIN_WINDOW_SAMPLES": 3,
+      "OOM_EXIT_CODE": 137,
+      "WORKER_IDLE_PCT": 30.0,
+      "WORKER_SATURATED_PCT": 80.0
+    },
+    "title": "Preprocessing-bound: data-loader workers cannot keep up"
+  },
+  "window": {
+    "end_mono": 13414.872246228,
+    "samples": 51,
+    "seconds": 51.0052,
+    "source": "metrics",
+    "start_mono": 13364.042454101,
+    "warmup_excluded_s": 2.1490605939998204
+  }
+}
